@@ -10,6 +10,10 @@ Vagaro, RingCentral, Stripe, Google and Twilio are blocked; Core API is out of s
 
 ---
 
+**Plain-language summary for non-technical readers: [DAILY-LOG.md](DAILY-LOG.md).**
+
+---
+
 ## At a glance
 
 | Area | Status | Detail |
