@@ -1,40 +1,43 @@
 # Daily Log
 
-Technical features and changes shipped, newest first.
+What was built, newest first. Technical work, written so anyone can follow it.
 Format rules: [DAILY-LOG-GUIDELINES.md](DAILY-LOG-GUIDELINES.md). Full detail: numbered files in this folder.
 
 ---
 
 ## 3 August 2026
 
-- **Vapi assistant + 15 tools deployed as versioned config**, with drift detection that actually
-  converges. Vapi materialises every server default, so a naive local-vs-remote diff is permanently
-  red; comparing `remote` against `merge(remote, local)` reports zero drift immediately after apply
-  and stays stable when Vapi adds new defaults.
+- **Grace and all 15 of her tools are live in Vapi, deployed straight from our code.** Her tools
+  cover checking availability, booking, rescheduling, cancelling, taking a message and transferring
+  to a person. Nothing was set up by hand in a dashboard, so every change is reviewable and can be
+  rolled back.
 
-- **Tool contract pipeline built on a single zod registry** — one source generates the 15 tool
-  definitions, the prompt's tool table, and the runtime validation. Adding a tool is one row.
-  Output is byte-deterministic and CI fails if the committed JSON drifts from the schemas.
+- **The system can now tell, at any moment, whether what's running matches what we intended.**
+  This was harder than it sounds: Vapi silently fills in dozens of its own default settings, which
+  made the obvious version of this check permanently report false alarms. It now ignores anything we
+  didn't explicitly set, and reports a clean match immediately after deployment.
 
-- **Offline schema validator that checks every assistant key against the live Vapi OpenAPI.**
-  Found four fields that no longer exist (`silenceTimeoutSeconds`, `backchannelingEnabled`,
-  `endCallFunctionEnabled`, `backgroundDenoisingEnabled`) and flags any deprecated key. Runs in
-  under a second with no API calls.
+- **All 15 tools are defined in one place, and everything else is generated from it** — the tool
+  definitions sent to Vapi, the instructions Grace reads, and the checks that validate her requests.
+  Adding a tool is a single entry. Nothing can fall out of sync, because nothing is maintained twice.
 
-- **Two Vapi incompatibilities turned from deploy-time 400s into offline failures**: `anyOf`
-  (emitted by a constrained `.nullable()`) and scalar `const` (emitted by `z.literal()`) are both
-  rejected by Vapi's tool-parameter validator. The generator now fails locally with the fix.
+- **Added a one-second check that catches invalid settings before anything reaches Vapi.** It
+  compares our configuration against Vapi's own published list of what it accepts. It immediately
+  found four settings in our plans that Vapi no longer supports at all, and two more that Vapi
+  rejects outright — those used to fail mid-deployment, and now fail instantly with an explanation.
 
-- **Mock tool server + speech engine.** Validates every inbound call against the real zod schemas,
-  enforces idempotency on `callId:toolCallId`, supports latency/failure/timeout injection and a
-  frozen clock. The spoken-number formatter (times, dates, prices) is covered by 14 tests after it
-  produced "Monday the third" for a Tuesday and "one 10-five" for $115.
+- **Built a practice system so Grace can be tested today, without Vagaro, Stripe, Google or a phone
+  line.** It answers her requests with realistic data and checks that everything she sends is valid.
+  It found three speaking bugs straight away — Grace said "Monday the third" for a Tuesday, and read
+  $115 as "one 10-five" instead of "one fifteen". Her way of speaking times, dates and prices is now
+  protected by 14 automated tests.
 
-- **n8n deploy pipeline with three real fixes**: credential placeholders resolved to live IDs
-  (n8n resolves strictly by ID, so a name deploys green then throws at first execution),
-  dependency-ordered activation (it refuses to publish a workflow whose sub-workflow is unpublished),
-  and a version-tolerant activate route after `/publish` returned 405. Three workflows live.
+- **Three staff-alert workflows are live in n8n**, covering urgent alerts, automatic escalation after
+  15 and 30 minutes, and failure notifications. Getting them running meant fixing three real
+  problems, including one where a workflow would deploy successfully and appear fine, then fail the
+  first time it actually ran.
 
-⚠️ **Unproven:** no live call has been placed and no workflow has executed. The assistant points at a
-placeholder URL. `export.ts` is a stub, so AC-09.2 is unverified, and the n8n drift comparison is not
-normalised — WF-18 re-reports drift on every apply. See [06-pending-and-blocked.md](06-pending-and-blocked.md).
+⚠️ **Not proven yet:** Grace has not taken a live call and no workflow has actually run. She is
+pointed at a placeholder address, so a real call would fail. Two smaller gaps: we cannot yet pull
+changes back out of n8n into our code, and one workflow reports a false change every time it
+deploys. Details in [06-pending-and-blocked.md](06-pending-and-blocked.md).

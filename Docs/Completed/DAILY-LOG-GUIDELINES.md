@@ -2,8 +2,11 @@
 
 How to write the end-of-day entry in [DAILY-LOG.md](DAILY-LOG.md). Run this when wrapping up.
 
-**The log records engineering output.** Features built, systems deployed, technical problems solved.
-Nothing else.
+**The log records engineering output** — features built, systems deployed, technical problems
+solved — **written so a non-technical reader can follow it.**
+
+Both halves matter. Technical substance with no plain explanation is unreadable to the people who
+need the status. Plain explanation with no substance is not worth writing.
 
 ---
 
@@ -47,19 +50,27 @@ the system does today, it is not a bullet.
 
 ## Tone
 
-Technical and specific, but readable by someone who is not in the code. Assume the reader knows
-software, not this codebase.
+**Assume the reader is smart but not technical.** No code, no field names, no library names, no
+internal jargon. Explain what the thing does and why it was hard — the difficulty is usually the
+interesting part, and it survives translation.
 
-| Write this | Not this |
-|---|---|
-| "comparing `remote` against `merge(remote, local)` reports zero drift and stays stable when Vapi adds defaults" | "improved the diffing logic" |
-| "Vapi rejects `anyOf`, emitted by a constrained `.nullable()` — the generator now fails locally" | "fixed schema generation issues" |
-| "idempotency on `callId:toolCallId`" | "added idempotency support" |
+Three ways a bullet goes wrong:
 
-- Name the mechanism, not just the outcome.
-- Include the number: how many tools, how many rules, how many tests.
-- When a bug is worth reporting, give the symptom — "produced 'Monday the third' for a Tuesday"
-  lands harder than "timezone bug".
+| Too vague | Too technical | Right |
+|---|---|---|
+| "improved the diffing logic" | "compares `remote` against `deepMerge(remote, local)` so materialised server defaults are excluded" | "can now tell whether what's running matches what we intended — Vapi silently adds dozens of its own defaults, which made the obvious version of this check useless" |
+| "fixed schema issues" | "Vapi rejects `anyOf`, emitted by a constrained `.nullable()`" | "two settings Vapi rejects outright used to fail mid-deployment; they now fail instantly with an explanation" |
+| "added idempotency" | "idempotency keyed on `callId:toolCallId`" | "if the same request arrives twice, it is only acted on once — so a stutter cannot double-book someone" |
+
+Rules of thumb:
+
+- **Lead with what it means, not how it works.** Mechanism second, in plain words.
+- **Keep the numbers.** How many tools, rules, tests, problems fixed. Numbers survive translation
+  and make the entry checkable.
+- **Give the symptom for bugs.** "Grace said 'Monday the third' for a Tuesday" beats "timezone bug"
+  for every reader, technical or not.
+- **No backticks, no file paths, no API names** unless the name is the point (a platform name like
+  Vapi or n8n is fine).
 
 ## Honesty rules
 
