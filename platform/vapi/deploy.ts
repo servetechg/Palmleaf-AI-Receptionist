@@ -159,7 +159,8 @@ function localStructuredOutputs(): Map<string, Json> {
   if (!existsSync(dir)) return out;
   for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {
     const so = loadJson(join(dir, file)) as Record<string, Json>;
-    out.set(String(so['name']), so);
+    const soName = so['name'];
+    out.set(typeof soName === 'string' ? soName : file, so);
   }
   return out;
 }
@@ -265,8 +266,8 @@ async function main(): Promise<void> {
       console.log(`  ~ assistant "${wantedName}"`);
       for (const d of drift) {
         if (d.forbidden) forbiddenDrift++;
-        const from = JSON.stringify(d.remote)?.slice(0, 70) ?? 'undefined';
-        const to = JSON.stringify(d.desired)?.slice(0, 70) ?? 'undefined';
+        const from = JSON.stringify(d.remote).slice(0, 70);
+        const to = JSON.stringify(d.desired).slice(0, 70);
         console.log(`      ${d.forbidden ? '⛔' : '·'} ${d.path}\n          remote:  ${from}\n          desired: ${to}`);
       }
       if (apply) await client.updateAssistant(remoteAssistant.id, desired);

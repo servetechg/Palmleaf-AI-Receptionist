@@ -1,18 +1,121 @@
 <!doctype html>
 <!--
-  ~60-line web-call test harness using @vapi-ai/web + VAPI_PUBLIC_KEY + the dev assistantId.
-  This is the ONLY test channel for this phase (doc 19: web/test calls only, no phone number).
-  Web calls use the exact stored assistant config, so this is a faithful test — except for
-  transfer (see A-14 in doc 17/19: transferCall reportedly unsupported on web calls, unverified).
+  Web-call harness — the only channel that can talk to Grace this phase (doc 08 §10).
+  Web calls use the exact stored assistant config, so this is a faithful test of the
+  prompt, the grounding rule, the medical gate, the PCI refusal, and endpointing.
 
-  TODO(build step B4): implement once assistants/grace.json is deployed to dev (step B3).
+  Caveat: transferCall to a PSTN number reportedly does not work on web calls (A-14),
+  so the transfer path is tested by simulation, not here.
+
+  Serve it (the SDK needs an http origin, not file://):
+      pnpm platform:vapi:harness
+  It reads the public key and assistant id from harness-config.js, which is generated
+  from .lock.json + VAPI_PUBLIC_KEY and is gitignored.
 -->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Grace — web call harness (dev only)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Grace — web call harness (dev)</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        max-width: 42rem; margin: 0 auto; padding: 2rem 1.25rem;
+      }
+      h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
+      .sub { opacity: .65; margin: 0 0 1.5rem; font-size: .875rem; }
+      button {
+        font: inherit; font-weight: 600; padding: .6rem 1.1rem; border-radius: .5rem;
+        border: 1px solid currentColor; background: transparent; cursor: pointer;
+      }
+      button[disabled] { opacity: .4; cursor: not-allowed; }
+      #status { margin-left: .75rem; font-variant-numeric: tabular-nums; opacity: .8; }
+      #log {
+        margin-top: 1.5rem; border-top: 1px solid rgba(128,128,128,.3); padding-top: 1rem;
+        white-space: pre-wrap; word-break: break-word;
+      }
+      .turn { margin: 0 0 .6rem; }
+      .who { font-weight: 600; opacity: .55; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
+      .warn { color: #b45309; }
+      .err  { color: #b91c1c; }
+      code { background: rgba(128,128,128,.15); padding: .1rem .3rem; border-radius: .25rem; }
+    </style>
   </head>
   <body>
-    <p>Not yet implemented — see doc 19 §B4.</p>
+    <h1>Grace — web call harness</h1>
+    <p class="sub">Dev assistant. Tools are served by the local mock server via your tunnel.</p>
+
+    <button id="call">Start call</button>
+    <span id="status">idle</span>
+
+    <div id="log"></div>
+
+    <script type="module">
+      import Vapi from 'https://esm.sh/@vapi-ai/web@2.6.1';
+      import { PUBLIC_KEY, ASSISTANT_ID } from './harness-config.js';
+
+      const logEl = document.getElementById('log');
+      const statusEl = document.getElementById('status');
+      const btn = document.getElementById('call');
+
+      const write = (who, text, cls = '') => {
+        const p = document.createElement('p');
+        p.className = 'turn';
+        p.innerHTML = `<span class="who ${cls}">${who}</span><br>`;
+        p.appendChild(document.createTextNode(text));
+        logEl.appendChild(p);
+        window.scrollTo(0, document.body.scrollHeight);
+      };
+
+      if (!PUBLIC_KEY || !ASSISTANT_ID) {
+        write('setup', 'harness-config.js is missing values. Run: pnpm platform:vapi:harness', 'err');
+        btn.disabled = true;
+      }
+
+      const vapi = new Vapi(PUBLIC_KEY);
+      let live = false;
+
+      vapi.on('call-start', () => {
+        live = true;
+        statusEl.textContent = 'connected';
+        btn.textContent = 'End call';
+        write('system', 'Call started. Grace should open with the recording disclosure (I7).');
+      });
+
+      vapi.on('call-end', () => {
+        live = false;
+        statusEl.textContent = 'ended';
+        btn.textContent = 'Start call';
+        write('system', 'Call ended. The end-of-call report should now hit your events URL.');
+      });
+
+      vapi.on('message', (m) => {
+        if (m.type === 'transcript' && m.transcriptType === 'final') {
+          write(m.role === 'user' ? 'you' : 'grace', m.transcript);
+        }
+        if (m.type === 'tool-calls') {
+          const names = (m.toolCalls ?? []).map((t) => t.function?.name).join(', ');
+          write('tool', names || '(unnamed)', 'warn');
+        }
+      });
+
+      vapi.on('error', (e) => {
+        statusEl.textContent = 'error';
+        write('error', typeof e === 'string' ? e : JSON.stringify(e, null, 2), 'err');
+      });
+
+      btn.addEventListener('click', async () => {
+        if (live) { vapi.stop(); return; }
+        logEl.innerHTML = '';
+        statusEl.textContent = 'connecting…';
+        try {
+          await vapi.start(ASSISTANT_ID);
+        } catch (e) {
+          statusEl.textContent = 'failed';
+          write('error', String(e), 'err');
+        }
+      });
+    </script>
   </body>
 </html>

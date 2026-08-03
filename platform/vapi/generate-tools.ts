@@ -71,7 +71,7 @@ function assertVapiCompatible(toolName: string, parameters: unknown): void {
 }
 
 function buildToolJson(spec: ToolSpec): Record<string, unknown> {
-  const parameters = zodToJsonSchema(spec.input, {
+  const parameters = zodToJsonSchema(spec.input as Parameters<typeof zodToJsonSchema>[0], {
     target: 'jsonSchema7',
     // Inline everything: Vapi has no $ref resolver for tool parameters.
     $refStrategy: 'none',

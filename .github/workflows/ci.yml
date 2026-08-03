@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # T1 — the static gate (doc 08 §9.1). No Vapi calls, no cost, target <90s.
+  # This is the tier that catches an `analysisPlan`-class error before it reaches a deploy.
+  static:
+    name: T1 static
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Unit tests
+        run: pnpm run test
+
+      # Invariant I7 — the recording and AI disclosures. Both halves matter: the greeting
+      # file must carry them, AND grace.json must inject rather than inline it, or an edit
+      # to grace.json would ship a greeting with no disclosure and still pass.
+      - name: I7 — recording disclosure
+        run: |
+          grep -qi "may be recorded" platform/vapi/prompts/first-message.txt \
+            || { echo "::error::I7: recording disclosure missing from first-message.txt"; exit 1; }
+          grep -qi "virtual assistant\|AI assistant" platform/vapi/prompts/first-message.txt \
+            || { echo "::error::I7: AI disclosure missing from first-message.txt"; exit 1; }
+          grep -q "injected from prompts/first-message.txt" platform/vapi/assistants/grace.json \
+            || { echo "::error::I7: grace.json must inject firstMessage, never inline it"; exit 1; }
+
+      # Generated artefacts must match what is committed, or the schema published to Vapi
+      # and the schema our handlers validate against have silently diverged.
+      - name: Generated tool JSON is current
+        run: pnpm platform:vapi:generate --check
+
+      - name: system.md is current
+        run: pnpm platform:vapi:prompt --check
+
+      # --refresh so this validates against the CURRENT Vapi API, not a cached copy.
+      # If Vapi deprecates a field we use, this is where we find out.
+      - name: Validate against the live Vapi schema
+        run: pnpm platform:vapi:validate --refresh
+
+      - name: n8n workflow lint
+        run: pnpm platform:n8n:lint
+
+      - name: No secrets committed
+        run: |
+          if git grep -nEI 'sk_live_|whsec_[A-Za-z0-9]{10,}|xoxb-[A-Za-z0-9-]{10,}|AC[0-9a-f]{32}' \
+               -- ':!*.md' ':!pnpm-lock.yaml'; then
+            echo "::error::possible secret committed"; exit 1
+          fi
+
+  # Drift — is the deployed config still what git says it is? Catches a dashboard edit.
+  # Scheduled hourly is what actually catches drift; on PRs it is advisory.
+  drift:
+    name: Config drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event_name == 'push'
+    needs: static
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Vapi drift
+        env:
+          VAPI_API_KEY: ${{ secrets.VAPI_API_KEY_DEV }}
+          GRACE_TOOLS_URL: ${{ vars.GRACE_TOOLS_URL_DEV }}
+          GRACE_EVENTS_URL: ${{ vars.GRACE_EVENTS_URL_DEV }}
+        run: pnpm platform:vapi:deploy --env dev --diff

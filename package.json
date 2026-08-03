@@ -8,7 +8,7 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "check": "pnpm -r run typecheck && pnpm -r run lint && pnpm -r run test",
+    "check": "pnpm run typecheck && pnpm run lint && pnpm run test",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -22,7 +22,9 @@
     "platform:vapi:mock": "tsx platform/vapi/mock-server/server.ts",
     "platform:n8n:diff": "tsx platform/n8n/deploy.ts --diff",
     "platform:n8n:deploy": "tsx platform/n8n/deploy.ts",
-    "platform:n8n:lint": "tsx platform/n8n/lint.ts"
+    "platform:n8n:lint": "tsx platform/n8n/lint.ts",
+    "platform:vapi:harness": "tsx platform/vapi/web-harness/serve.ts",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

@@ -1,1 +1,5 @@
+# Cached Vapi OpenAPI spec — refetched by validate.ts --refresh
 .vapi-openapi.json
+
+# Generated from .lock.json + VAPI_PUBLIC_KEY at serve time
+web-harness/harness-config.js

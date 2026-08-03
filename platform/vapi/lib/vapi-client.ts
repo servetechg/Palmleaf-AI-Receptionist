@@ -76,5 +76,7 @@ export class VapiClient {
 /** Tool identity is `function.name` for function tools, else the tool `type`. */
 export function toolIdentity(tool: Record<string, unknown>): string {
   const fn = tool['function'] as { name?: string } | undefined;
-  return fn?.name ?? String(tool['type'] ?? '');
+  if (fn?.name) return fn.name;
+  const type = tool['type'];
+  return typeof type === 'string' ? type : '';
 }

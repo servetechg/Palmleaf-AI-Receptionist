@@ -95,7 +95,8 @@ async function main(): Promise<void> {
   }
 
   // ── I7: the greeting must be injected, never inlined ─────────────────────────
-  const firstMessage = String(assistant['firstMessage'] ?? '');
+  const fmRaw = assistant['firstMessage'];
+  const firstMessage = typeof fmRaw === 'string' ? fmRaw : '';
   if (!firstMessage.includes('injected from prompts/first-message.txt')) {
     fail('I7: grace.json must inject firstMessage from prompts/first-message.txt, never inline it');
   }
@@ -152,7 +153,7 @@ async function main(): Promise<void> {
     // unless the prompt guarantees the very next tool speaks (flagEscalation → transfer).
     // `as const` narrows each entry to its literal type, so the optional flag is only
     // present on the entries that set it — hence the `in` guard rather than `t.x`.
-    const ackedByNextTool = 'ackedByNextTool' in t && t.ackedByNextTool === true;
+    const ackedByNextTool = 'ackedByNextTool' in t;
     if (t.async && !ackedByNextTool && !Array.isArray(tool['messages'])) {
       fail(
         `tools/${t.name}.json is async but has no request-start message — the caller would hear ` +

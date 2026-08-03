@@ -1,0 +1,44 @@
+{
+  "name": "WF-00 Global Error Handler",
+  "nodes": [
+    {
+      "id": "err-trigger",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "format",
+      "name": "Format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "parameters": {
+        "jsCode": "// Never echo the failing payload: it may contain caller utterances, and this\n// message lands in Slack (I6). Identify the workflow and the node, nothing more.\nconst e = $input.first().json;\nconst wf = e.workflow || {};\nconst ex = e.execution || {};\nreturn [{ json: {\n  text: [\n    ':rotating_light: *n8n workflow failed*',\n    '*Workflow:* ' + (wf.name || 'unknown'),\n    '*Node:* ' + (ex.lastNodeExecuted || 'unknown'),\n    '*Error:* ' + String(ex.error?.message || 'unknown').slice(0, 300),\n    '*Execution:* ' + (ex.id || 'n/a')\n  ].join('\\n')\n} }];"
+      }
+    },
+    {
+      "id": "slack",
+      "name": "Slack — ops log",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [440, 0],
+      "parameters": {
+        "select": "channel",
+        "channelId": "#palmleaf-ops-log",
+        "text": "={{ $json.text }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": { "id": "__CRED__:slack", "name": "__CRED__:slack" }
+      }
+    }
+  ],
+  "connections": {
+    "Error Trigger": { "main": [[{ "node": "Format", "type": "main", "index": 0 }]] },
+    "Format": { "main": [[{ "node": "Slack — ops log", "type": "main", "index": 0 }]] }
+  },
+  "settings": {}
+}
