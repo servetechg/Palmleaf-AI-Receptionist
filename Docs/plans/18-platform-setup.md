@@ -24,7 +24,7 @@ developer or a new tenant.
 | Stripe | ⛔ blocked | GATE-08 |
 | Google Calendar | ⛔ blocked | GATE-07 |
 | Twilio | ⛔ blocked | GATE-09 (A2P 10DLC) |
-| Slack | ⚠️ not created | §4 — no roadmap task creates it; this doc is the task |
+| Slack | ⛔ **NOT IN SCOPE** | Removed from the platform list 2026-08-03. §4 retained for if it returns. |
 
 **Consequence for this phase:** testing happens over **web calls only** (§08 §10). No phone number is
 provisioned, and the transfer path cannot be verified end to end (**A-14**).
@@ -76,6 +76,7 @@ concurrency, our own metering, and the §12 §6 daily-spend alert. Do not assume
 
 ### 1.4 What NOT to configure
 
+- **No Slack app.** Out of scope (§4).
 - **No phone number.** Not this phase (§0). When telephony unblocks, follow §10 §2 for the BYO-SIP trunk.
 - **No knowledge base / files.** Explicitly rejected in §08 §11.3 — it would be a second, unapproved
   source of truth and would defeat GATE-02/GATE-04.
@@ -121,10 +122,17 @@ Credentials are **never** deployed (§09 §6.2). Create each once, per environme
 
 | Alias | Type | Dev name | Prod name |
 |---|---|---|---|
-| `slack` | `slackApi` | `PalmLeaf Slack (dev)` | `PalmLeaf Slack (prod)` |
 | `core-api` | `httpHeaderAuth` | `PalmLeaf Core API (dev)` | `PalmLeaf Core API (prod)` |
 
-`httpHeaderAuth` carries `Authorization: Bearer $GRACE_INTERNAL_API_TOKEN` for the `/internal/*` calls.
+**One credential — that is the whole list.** `httpHeaderAuth` carries
+`Authorization: Bearer $GRACE_INTERNAL_API_TOKEN` for the `/internal/*` calls.
+
+n8n deliberately holds **no third-party credentials**. Every outbound notification goes through Core
+API's `/internal/notify/*`, so 10DLC, opt-out and consent enforcement live in one place and cannot be
+bypassed (§09 §3.4). Adding a Slack or Twilio node here would reintroduce exactly that bypass.
+
+✅ `PalmLeaf Core API (dev)` already exists (`MLPOdQtg1zcSlYUJ`) with a **placeholder token** — rotate it
+when Core API is real.
 
 **No Twilio credential.** §09 §3.4: staff SMS goes through `POST /internal/notify/sms` so the messaging
 adapter's 10DLC, consent, and STOP/HELP enforcement cannot be bypassed. An n8n Twilio node would defeat
@@ -175,7 +183,16 @@ Symptom if you skip this: MCP servers fail with *"'url' is not a valid URL"* (em
 
 ---
 
-## 4. Slack app — two registrations
+## 4. Slack app — NOT IN SCOPE (retained for reference)
+
+> ⛔ **Slack was removed from the platform list on 2026-08-03.** No workflow depends on it.
+> All notification now goes through Core API's `/internal/notify/*`, which is a better
+> boundary anyway — n8n holds no third-party credentials, and 10DLC/opt-out enforcement
+> lives in one place (doc 09 §3.4). If Slack is adopted later it becomes a Core API
+> notification channel; **no n8n workflow changes.** The rest of this section is kept only
+> so the setup is not re-derived from scratch.
+
+### 4.0 (if Slack returns) — two registrations
 
 ⚠️ **No roadmap task creates the Slack app**, yet WF-12, WF-14, WF-15, WF-16 and WF-18 all depend on it.
 This section is that task.

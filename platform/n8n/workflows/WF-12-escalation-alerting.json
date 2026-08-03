@@ -6,13 +6,18 @@
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "webhookId": "grace-escalation",
       "parameters": {
         "httpMethod": "POST",
         "path": "{{ENV}}/escalation",
         "responseMode": "responseNode",
-        "options": { "rawBody": true }
+        "options": {
+          "rawBody": true
+        }
       }
     },
     {
@@ -20,9 +25,12 @@
       "name": "Verify signature",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [220, 0],
+      "position": [
+        220,
+        0
+      ],
       "parameters": {
-        "jsCode": "// HMAC per doc 09 §2.1. The signature covers the exact bytes, so Raw Body must be on.\nconst crypto = require('crypto');\nconst secret = $env.GRACE_N8N_WEBHOOK_SECRET;\nif (!secret) throw new Error('GRACE_N8N_WEBHOOK_SECRET is not set on this instance');\n\nconst h = $input.first().json.headers || {};\nconst raw = $input.first().json.rawBody?.toString('utf8') ?? '';\nconst ts = String(h['x-grace-timestamp'] ?? '');\nconst sig = String(h['x-grace-signature'] ?? '');\n\nconst skew = Math.abs(Date.now() / 1000 - Number(ts));\nif (!ts || !sig || Number.isNaN(skew) || skew > 300) {\n  return [{ json: { ok: false, code: 401, why: 'missing or stale timestamp' } }];\n}\n\nconst expected = crypto.createHmac('sha256', secret).update(ts + '.' + raw).digest('hex');\nconst a = Buffer.from(expected); const b = Buffer.from(sig);\nif (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {\n  return [{ json: { ok: false, code: 401, why: 'bad signature' } }];\n}\n\nlet body = {};\ntry { body = JSON.parse(raw); } catch { return [{ json: { ok: false, code: 400, why: 'bad json' } }]; }\n\nreturn [{ json: {\n  ok: true,\n  taskId: body.taskId,\n  type: body.type,\n  priority: Number(body.priority ?? 3),\n  tenant: body.tenant,\n  title: body.title ?? 'Staff task',\n  summary: body.summary ?? '',\n  occurredAt: body.occurredAt\n} }];"
+        "jsCode": "// HMAC per doc 09 \u00a72.1. The signature covers the exact bytes, so Raw Body must be on.\nconst crypto = require('crypto');\nconst secret = $env.GRACE_N8N_WEBHOOK_SECRET;\nif (!secret) throw new Error('GRACE_N8N_WEBHOOK_SECRET is not set on this instance');\n\nconst h = $input.first().json.headers || {};\nconst raw = $input.first().json.rawBody?.toString('utf8') ?? '';\nconst ts = String(h['x-grace-timestamp'] ?? '');\nconst sig = String(h['x-grace-signature'] ?? '');\n\nconst skew = Math.abs(Date.now() / 1000 - Number(ts));\nif (!ts || !sig || Number.isNaN(skew) || skew > 300) {\n  return [{ json: { ok: false, code: 401, why: 'missing or stale timestamp' } }];\n}\n\nconst expected = crypto.createHmac('sha256', secret).update(ts + '.' + raw).digest('hex');\nconst a = Buffer.from(expected); const b = Buffer.from(sig);\nif (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {\n  return [{ json: { ok: false, code: 401, why: 'bad signature' } }];\n}\n\nlet body = {};\ntry { body = JSON.parse(raw); } catch { return [{ json: { ok: false, code: 400, why: 'bad json' } }]; }\n\nreturn [{ json: {\n  ok: true,\n  taskId: body.taskId,\n  type: body.type,\n  priority: Number(body.priority ?? 3),\n  tenant: body.tenant,\n  title: body.title ?? 'Staff task',\n  summary: body.summary ?? '',\n  occurredAt: body.occurredAt\n} }];"
       }
     },
     {
@@ -30,15 +38,25 @@
       "name": "Authenticated?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [440, 0],
+      "position": [
+        440,
+        0
+      ],
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "version": 2 },
+          "options": {
+            "caseSensitive": true,
+            "version": 2
+          },
           "combinator": "and",
           "conditions": [
             {
               "id": "ok",
-              "operator": { "type": "boolean", "operation": "true", "singleValue": true },
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
               "leftValue": "={{ $json.ok }}"
             }
           ]
@@ -50,7 +68,10 @@
       "name": "Respond 200",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [660, -120],
+      "position": [
+        660,
+        -120
+      ],
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({ ok: true }) }}"
@@ -61,7 +82,10 @@
       "name": "Respond 401",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [660, 120],
+      "position": [
+        660,
+        120
+      ],
       "parameters": {
         "respondWith": "json",
         "responseCode": 401,
@@ -73,19 +97,27 @@
       "name": "Route by priority",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [880, -120],
+      "position": [
+        880,
+        -120
+      ],
       "parameters": {
         "rules": {
           "values": [
             {
               "outputKey": "P1",
               "conditions": {
-                "options": { "version": 2 },
+                "options": {
+                  "version": 2
+                },
                 "combinator": "and",
                 "conditions": [
                   {
                     "id": "p1",
-                    "operator": { "type": "number", "operation": "equals" },
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
                     "leftValue": "={{ $json.priority }}",
                     "rightValue": 1
                   }
@@ -95,12 +127,17 @@
             {
               "outputKey": "P2",
               "conditions": {
-                "options": { "version": 2 },
+                "options": {
+                  "version": 2
+                },
                 "combinator": "and",
                 "conditions": [
                   {
                     "id": "p2",
-                    "operator": { "type": "number", "operation": "equals" },
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    },
                     "leftValue": "={{ $json.priority }}",
                     "rightValue": 2
                   }
@@ -109,29 +146,49 @@
             }
           ]
         },
-        "options": { "fallbackOutput": "extra", "renameFallbackOutput": "P3" }
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "P3"
+        }
       }
     },
     {
-      "id": "slack-p1",
-      "name": "Slack P1",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
-      "position": [1100, -260],
+      "id": "notify-p1",
+      "name": "Notify P1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        -260
+      ],
       "parameters": {
-        "select": "channel",
-        "channelId": "#palmleaf-alerts",
-        "text": "=<!here> :rotating_light: *P1* {{ $json.title }}\\n{{ $json.summary }}\\n_task {{ $json.taskId }}_",
-        "otherOptions": {}
+        "method": "POST",
+        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/notify/staff",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ severity: 'P1', mention: true, taskId: $json.taskId, title: $json.title, summary: $json.summary }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        }
       },
-      "credentials": { "slackApi": { "id": "__CRED__:slack", "name": "__CRED__:slack" } }
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CRED__:core-api",
+          "name": "__CRED__:core-api"
+        }
+      }
     },
     {
       "id": "sms-p1",
       "name": "SMS manager",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1320, -260],
+      "position": [
+        1320,
+        -260
+      ],
       "parameters": {
         "method": "POST",
         "url": "={{ $env.GRACE_CORE_API_URL }}/internal/notify/sms",
@@ -140,10 +197,15 @@
         "jsonBody": "={{ JSON.stringify({ to: 'manager', template: 'p1_escalation', taskId: $json.taskId, summary: $json.summary }) }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "credentials": {
-        "httpHeaderAuth": { "id": "__CRED__:core-api", "name": "__CRED__:core-api" }
+        "httpHeaderAuth": {
+          "id": "__CRED__:core-api",
+          "name": "__CRED__:core-api"
+        }
       }
     },
     {
@@ -151,25 +213,39 @@
       "name": "Wait 15 min",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [1540, -260],
+      "position": [
+        1540,
+        -260
+      ],
       "webhookId": "grace-esc-wait",
-      "parameters": { "amount": 15, "unit": "minutes" }
+      "parameters": {
+        "amount": 15,
+        "unit": "minutes"
+      }
     },
     {
       "id": "recheck",
       "name": "Still unacknowledged?",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1760, -260],
+      "position": [
+        1760,
+        -260
+      ],
       "parameters": {
         "method": "GET",
         "url": "={{ $env.GRACE_CORE_API_URL }}/internal/tasks/{{ $json.taskId }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "credentials": {
-        "httpHeaderAuth": { "id": "__CRED__:core-api", "name": "__CRED__:core-api" }
+        "httpHeaderAuth": {
+          "id": "__CRED__:core-api",
+          "name": "__CRED__:core-api"
+        }
       }
     },
     {
@@ -177,32 +253,52 @@
       "name": "Escalate to on-call",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
-      "position": [1980, -260],
+      "position": [
+        1980,
+        -260
+      ],
       "parameters": {
         "workflowId": "__WF__:wf-18",
         "options": {}
       }
     },
     {
-      "id": "slack-p2",
-      "name": "Slack P2",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
-      "position": [1100, -120],
+      "id": "notify-p2",
+      "name": "Notify P2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        -120
+      ],
       "parameters": {
-        "select": "channel",
-        "channelId": "#palmleaf-alerts",
-        "text": "=:warning: *P2* {{ $json.title }}\\n{{ $json.summary }}\\n_task {{ $json.taskId }}_",
-        "otherOptions": {}
+        "method": "POST",
+        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/notify/staff",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ severity: 'P2', mention: false, taskId: $json.taskId, title: $json.title, summary: $json.summary }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        }
       },
-      "credentials": { "slackApi": { "id": "__CRED__:slack", "name": "__CRED__:slack" } }
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CRED__:core-api",
+          "name": "__CRED__:core-api"
+        }
+      }
     },
     {
       "id": "digest",
       "name": "Append to digest",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1100, 20],
+      "position": [
+        1100,
+        20
+      ],
       "parameters": {
         "method": "POST",
         "url": "={{ $env.GRACE_CORE_API_URL }}/internal/digest/append",
@@ -211,34 +307,139 @@
         "jsonBody": "={{ JSON.stringify({ taskId: $json.taskId, title: $json.title, priority: $json.priority }) }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
-        "options": { "timeout": 10000 }
+        "options": {
+          "timeout": 10000
+        }
       },
       "credentials": {
-        "httpHeaderAuth": { "id": "__CRED__:core-api", "name": "__CRED__:core-api" }
+        "httpHeaderAuth": {
+          "id": "__CRED__:core-api",
+          "name": "__CRED__:core-api"
+        }
       }
     }
   ],
   "connections": {
-    "Webhook": { "main": [[{ "node": "Verify signature", "type": "main", "index": 0 }]] },
-    "Verify signature": { "main": [[{ "node": "Authenticated?", "type": "main", "index": 0 }]] },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify signature": {
+      "main": [
+        [
+          {
+            "node": "Authenticated?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Authenticated?": {
       "main": [
-        [{ "node": "Respond 200", "type": "main", "index": 0 }],
-        [{ "node": "Respond 401", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Respond 200",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 401",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Respond 200": { "main": [[{ "node": "Route by priority", "type": "main", "index": 0 }]] },
+    "Respond 200": {
+      "main": [
+        [
+          {
+            "node": "Route by priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Route by priority": {
       "main": [
-        [{ "node": "Slack P1", "type": "main", "index": 0 }],
-        [{ "node": "Slack P2", "type": "main", "index": 0 }],
-        [{ "node": "Append to digest", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Notify P1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify P2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append to digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Slack P1": { "main": [[{ "node": "SMS manager", "type": "main", "index": 0 }]] },
-    "SMS manager": { "main": [[{ "node": "Wait 15 min", "type": "main", "index": 0 }]] },
-    "Wait 15 min": { "main": [[{ "node": "Still unacknowledged?", "type": "main", "index": 0 }]] },
-    "Still unacknowledged?": { "main": [[{ "node": "Escalate to on-call", "type": "main", "index": 0 }]] }
+    "SMS manager": {
+      "main": [
+        [
+          {
+            "node": "Wait 15 min",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 15 min": {
+      "main": [
+        [
+          {
+            "node": "Still unacknowledged?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still unacknowledged?": {
+      "main": [
+        [
+          {
+            "node": "Escalate to on-call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify P1": {
+      "main": [
+        [
+          {
+            "node": "SMS manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "settings": {
     "errorWorkflow": "__WF__:wf-00"

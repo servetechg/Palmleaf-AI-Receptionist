@@ -26,7 +26,9 @@ if (!['dev', 'prod'].includes(env)) {
 
 /** Alias → credential name, per environment. Mirrors credentials.example.json. */
 const CREDENTIAL_NAMES: Record<string, Record<string, string>> = {
-  slack: { dev: 'PalmLeaf Slack (dev)', prod: 'PalmLeaf Slack (prod)' },
+  // Only one. n8n holds no third-party credentials — every notification goes through
+  // Core API's /internal/notify/*, so 10DLC and opt-out enforcement cannot be bypassed
+  // (doc 09 §3.4). Slack is not in scope; if adopted it becomes a Core API channel.
   'core-api': { dev: 'PalmLeaf Core API (dev)', prod: 'PalmLeaf Core API (prod)' },
 };
 
@@ -63,6 +65,12 @@ function loadLocal(): Local[] {
  * workflow, activates it, and then throws `CredentialNotFoundError` on the first
  * execution, which is the worst possible time to find out (doc 09 §6.2).
  */
+/** Aliases this workflow references via __WF__:, i.e. what must be published first. */
+function dependenciesOf(local: Local): string[] {
+  const refs = JSON.stringify(local.wf).match(/__WF__:([a-z0-9-]+)/g) ?? [];
+  return [...new Set(refs.map((r) => r.slice('__WF__:'.length)))];
+}
+
 function render(
   local: Local,
   credIds: Map<string, string>,
@@ -152,6 +160,11 @@ async function main(): Promise<void> {
   const local = loadLocal();
   let changes = 0;
 
+  // n8n refuses to publish a workflow whose sub-workflows are not yet published, so
+  // activation has to happen in dependency order — observed 2026-08-03:
+  //   'Cannot publish workflow: Node X references workflow Y which is not published.'
+  const pendingActivation: Array<{ id: string; label: string; deps: string[] }> = [];
+
   // Two passes: create everything first so __WF__ cross-references can resolve.
   if (apply) {
     for (const l of local) {
@@ -160,6 +173,13 @@ async function main(): Promise<void> {
       const placeholder = { name: target, nodes: [], connections: {}, settings: {} };
       const created = await client.createWorkflow(placeholder);
       if (created.id) {
+        // Tag IMMEDIATELY. If a later step fails, the partially-created workflow is still
+        // inside the managed set — so the next run finds and finishes it instead of
+        // creating a second copy and leaving an untagged orphan behind.
+        await client.setTags(
+          created.id,
+          managedTags.map((t) => tagIds.get(t)).filter((x): x is string => Boolean(x)),
+        );
         byName.set(target, created);
         const m = /^(WF-\d+)/.exec(l.wf.name);
         if (m?.[1]) workflowIds.set(m[1], created.id);
@@ -197,8 +217,32 @@ async function main(): Promise<void> {
       remote.id,
       managedTags.map((t) => tagIds.get(t)).filter((x): x is string => Boolean(x)),
     );
-    const route = await client.activate(remote.id);
-    console.log(`      updated, tagged, activated via /${route}`);
+    pendingActivation.push({ id: remote.id, label: target, deps: dependenciesOf(l) });
+    console.log(`      updated and tagged`);
+  }
+
+  // Activate in dependency order: a referenced sub-workflow must be published first.
+  if (apply && pendingActivation.length > 0) {
+    const aliasOf = (label: string): string => (/(WF-\d+)/.exec(label)?.[1] ?? '').toLowerCase();
+    const done = new Set<string>();
+    let queue = [...pendingActivation];
+
+    // Bound on the ORIGINAL length: `queue` shrinks each pass, so comparing against it
+    // exits one pass early and silently leaves the last workflow unactivated.
+    const maxPasses = queue.length + 1;
+    for (let pass = 0; pass < maxPasses && queue.length > 0; pass++) {
+      const ready = queue.filter((w) => w.deps.every((d) => done.has(d) || d === aliasOf(w.label)));
+      // Nothing became ready: a cycle, or a dependency outside this deploy. Try anyway
+      // so the error surfaces from n8n rather than as a silent no-op.
+      const batch = ready.length > 0 ? ready : queue;
+
+      for (const w of batch) {
+        const route = await client.activate(w.id);
+        console.log(`  ▶ activated ${w.label} via /${route}`);
+        done.add(aliasOf(w.label));
+      }
+      queue = queue.filter((w) => !batch.includes(w));
+    }
   }
 
   // A managed workflow with no local file is an orphan — fail rather than silently leave it.

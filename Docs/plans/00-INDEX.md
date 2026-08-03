@@ -48,12 +48,17 @@ Read **01**, **02**, **03** before writing any code. They are load-bearing for e
 | [15](15-implementation-roadmap.md) | **Implementation Roadmap** | **The ordered, step-by-step task list to execute** | **this is the work** |
 | [16](16-runbooks.md) | Operational Runbooks | Kill switch, incident response, on-call, common failures | before go-live |
 | [17](17-open-decisions.md) | Open Decisions & Assumptions | Blocking gates, assumption register, decision log | continuously |
-| [18](18-platform-setup.md) | Platform Account Setup Runbook | Vapi keys/credentials/concurrency, n8n tokens/tags/credentials, Slack apps, MCP, secret inventory | the first platform deploy |
+| [18](18-platform-setup.md) | Platform Account Setup Runbook | Vapi keys/credentials/concurrency, n8n tokens/tags/credentials, MCP, secret inventory | the first platform deploy |
 | [19](19-vapi-n8n-execution-plan.md) | **Vapi + n8n Execution Plan** | **⚡ ACTIVE — corrects verified API defects in 08/09, then builds the platform layers** | **08, 09, or any platform work** |
 
 > ⚡ **Current work is [19-vapi-n8n-execution-plan.md](19-vapi-n8n-execution-plan.md).** Vagaro,
 > RingCentral, Stripe and Google are blocked; Vapi and n8n Cloud are fully accessible, so the build order
 > pivots to the conversation and orchestration layers first.
+>
+> 📋 **What is actually built vs still pending: [`Docs/Completed/`](../Completed/00-STATUS.md).**
+> That folder is the source of truth for delivery status — one file per work area, each
+> recording what was verified and with what evidence. Treat anything not listed as verified
+> there as unproven, however finished the code looks.
 >
 > Docs **08** and **09** were rewritten on 2026-08-03 against the live Vapi OpenAPI spec and a live probe
 > of the n8n Cloud instance. Both carry a **§Corrections** table listing what was wrong and why it

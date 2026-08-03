@@ -86,7 +86,10 @@ export class N8nClient {
       await this.req('POST', `/workflows/${id}/publish`);
       return 'publish';
     } catch (err) {
-      if (err instanceof N8nError && err.status === 404) {
+      // 404 = route absent; 405 = path exists but POST is not allowed on this version.
+      // Observed 405 on palmleafmassage.app.n8n.cloud (2026-08-03) — catching only 404
+      // was not enough, so both mean "this instance wants /activate".
+      if (err instanceof N8nError && (err.status === 404 || err.status === 405)) {
         await this.req('POST', `/workflows/${id}/activate`);
         return 'activate';
       }

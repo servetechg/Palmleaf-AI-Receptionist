@@ -1,0 +1,163 @@
+{
+  "name": "WF-18 On-call Escalation",
+  "nodes": [
+    {
+      "id": "start",
+      "name": "Called by WF-12",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "repeat-sms",
+      "name": "Repeat SMS manager",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/notify/sms",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ to: 'manager', template: 'p1_unacknowledged', taskId: $json.taskId, summary: $json.summary }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CRED__:core-api",
+          "name": "__CRED__:core-api"
+        }
+      }
+    },
+    {
+      "id": "wait30",
+      "name": "Wait 30 min",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        0
+      ],
+      "webhookId": "grace-oncall-wait",
+      "parameters": {
+        "amount": 30,
+        "unit": "minutes"
+      }
+    },
+    {
+      "id": "recheck",
+      "name": "Still unacknowledged?",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/tasks/{{ $json.taskId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CRED__:core-api",
+          "name": "__CRED__:core-api"
+        }
+      }
+    },
+    {
+      "id": "final",
+      "name": "Final escalation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/notify/staff",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ severity: 'P1', mention: true, escalationLevel: 'oncall-final', taskId: $json.taskId, title: 'UNACKNOWLEDGED 45 MIN', summary: $json.summary }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CRED__:core-api",
+          "name": "__CRED__:core-api"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Called by WF-12": {
+      "main": [
+        [
+          {
+            "node": "Repeat SMS manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Repeat SMS manager": {
+      "main": [
+        [
+          {
+            "node": "Wait 30 min",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 30 min": {
+      "main": [
+        [
+          {
+            "node": "Still unacknowledged?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still unacknowledged?": {
+      "main": [
+        [
+          {
+            "node": "Final escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "__WF__:wf-00"
+  }
+}

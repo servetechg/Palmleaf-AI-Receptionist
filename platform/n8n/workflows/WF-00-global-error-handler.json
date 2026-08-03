@@ -6,7 +6,10 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [0, 0],
+      "position": [
+        0,
+        0
+      ],
       "parameters": {}
     },
     {
@@ -14,31 +17,66 @@
       "name": "Format",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [220, 0],
+      "position": [
+        220,
+        0
+      ],
       "parameters": {
-        "jsCode": "// Never echo the failing payload: it may contain caller utterances, and this\n// message lands in Slack (I6). Identify the workflow and the node, nothing more.\nconst e = $input.first().json;\nconst wf = e.workflow || {};\nconst ex = e.execution || {};\nreturn [{ json: {\n  text: [\n    ':rotating_light: *n8n workflow failed*',\n    '*Workflow:* ' + (wf.name || 'unknown'),\n    '*Node:* ' + (ex.lastNodeExecuted || 'unknown'),\n    '*Error:* ' + String(ex.error?.message || 'unknown').slice(0, 300),\n    '*Execution:* ' + (ex.id || 'n/a')\n  ].join('\\n')\n} }];"
+        "jsCode": "// Never echo the failing payload: it may contain caller utterances, and this\n// message is forwarded to staff (I6). Identify the workflow and the node, nothing more.\nconst e = $input.first().json;\nconst wf = e.workflow || {};\nconst ex = e.execution || {};\nreturn [{ json: {\n  text: [\n    'n8n workflow failed',\n    'Workflow: ' + (wf.name || 'unknown'),\n    'Node: ' + (ex.lastNodeExecuted || 'unknown'),\n    'Error: ' + String(ex.error?.message || 'unknown').slice(0, 300),\n    'Execution: ' + (ex.id || 'n/a')\n  ].join('\\n')\n} }];"
       }
     },
     {
-      "id": "slack",
-      "name": "Slack — ops log",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
-      "position": [440, 0],
+      "id": "notify",
+      "name": "Notify ops",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
       "parameters": {
-        "select": "channel",
-        "channelId": "#palmleaf-ops-log",
-        "text": "={{ $json.text }}",
-        "otherOptions": {}
+        "method": "POST",
+        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/notify/ops",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ channel: 'ops', severity: 'error', text: $json.text }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 10000
+        }
       },
       "credentials": {
-        "slackApi": { "id": "__CRED__:slack", "name": "__CRED__:slack" }
+        "httpHeaderAuth": {
+          "id": "__CRED__:core-api",
+          "name": "__CRED__:core-api"
+        }
       }
     }
   ],
   "connections": {
-    "Error Trigger": { "main": [[{ "node": "Format", "type": "main", "index": 0 }]] },
-    "Format": { "main": [[{ "node": "Slack — ops log", "type": "main", "index": 0 }]] }
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format": {
+      "main": [
+        [
+          {
+            "node": "Notify ops",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "settings": {}
 }
