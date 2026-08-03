@@ -1,0 +1,26 @@
+{
+  "env": "dev",
+  "assistantId": "51fd2d26-b00f-42a7-964d-adef6437ddaf",
+  "toolIds": {
+    "cancelAppointment": "9f3dc634-63ef-49a4-be51-c369a2bca637",
+    "checkAvailability": "0270ec52-70d8-464d-bc00-5aa24f146688",
+    "createBooking": "d66287f9-338d-445b-9f12-f556350cb382",
+    "endCall": "523f2702-cc77-46f1-bc45-ec6498104ff1",
+    "flagEscalation": "c657f101-a2da-4e21-afc3-e845d655edb2",
+    "flagMedicalHold": "166ba00d-ff2e-4331-a76b-13144489d028",
+    "getBusinessInfo": "6843e5bf-d16e-425b-afb0-c3f5d5a7278c",
+    "getServicesAndPricing": "3c19de00-7fef-4d94-83d7-295ef7c0c049",
+    "lookupCustomer": "7ce2a560-98b7-4dea-ace7-a8de2b933a64",
+    "rescheduleAppointment": "d081c164-5010-48c7-836e-cf123d5a13e1",
+    "sendBookingConfirmation": "e0f05ffe-bd64-494e-9c63-091817186ba3",
+    "sendDepositLink": "0a30fc2d-8cd3-4706-94f3-7eccdfc27707",
+    "sendIntakeForm": "e5bd38e7-ef24-4173-bc82-a16cd0df2a10",
+    "takeMessage": "df9f1a35-1674-4ebb-a411-ebd4689fa7cc",
+    "transferCall": "a0f89f8f-3b4a-4d64-abf5-7dfb214d668a"
+  },
+  "structuredOutputIds": {
+    "grace-call-outcome": "3e25e0f5-1cf1-49a5-8c02-7ee10e92f948"
+  },
+  "lastAppliedSha": "34e3f4d287d9f8ef08e5aae99bb41f348eea98d4",
+  "lastAppliedAt": "2026-08-03T12:49:10.265Z"
+}

@@ -1,0 +1,59 @@
+{
+  "async": false,
+  "function": {
+    "description": "Book the appointment. Call this only after the caller has chosen a specific time you offered AND you have asked the medical screening question. Pass the slot id exactly as checkAvailability gave it. If they disclosed anything medical, do not call this — call flagMedicalHold and escalate.",
+    "name": "createBooking",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "firstName": {
+          "description": "Caller first name as they said it. Do not ask for a surname unless they offer one.",
+          "maxLength": 60,
+          "minLength": 1,
+          "type": "string"
+        },
+        "lastName": {
+          "maxLength": 60,
+          "type": "string"
+        },
+        "medicalScreenPassed": {
+          "description": "Set true ONLY after asking the screening question and hearing a clear no. If they said yes, are unsure, or you did not ask, set false and call flagMedicalHold instead of booking.",
+          "type": "boolean"
+        },
+        "notes": {
+          "description": "Scheduling preferences only, e.g. \"prefers a quieter room\". NEVER any health, medical, or diagnostic detail.",
+          "maxLength": 280,
+          "type": "string"
+        },
+        "slotId": {
+          "description": "Slot id exactly as checkAvailability returned it, e.g. hold-7K2. Never invent one.",
+          "pattern": "^hold-[0-9A-HJKMNP-TV-Z]{3,6}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slotId",
+        "firstName",
+        "medicalScreenPassed"
+      ],
+      "type": "object"
+    }
+  },
+  "messages": [
+    {
+      "blocking": false,
+      "content": "Let me get that booked for you.",
+      "type": "request-start"
+    },
+    {
+      "content": "I'm having trouble completing that booking.",
+      "type": "request-failed"
+    }
+  ],
+  "server": {
+    "credentialId": "${VAPI_TOOLS_CREDENTIAL_ID}",
+    "timeoutSeconds": 10,
+    "url": "${GRACE_TOOLS_URL}"
+  },
+  "type": "function"
+}

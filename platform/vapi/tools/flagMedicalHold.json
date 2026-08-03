@@ -1,0 +1,26 @@
+{
+  "async": false,
+  "function": {
+    "description": "Call this the instant a caller mentions surgery, an injury, a condition, medication, pregnancy, or any treatment — even in passing. It blocks the booking so a qualified person can follow up. Do NOT ask what the condition is, do NOT repeat it back, and do NOT record it anywhere. After calling this, escalate.",
+    "name": "flagMedicalHold",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "disclosed": {
+          "description": "Always pass true. Call this the moment a caller mentions surgery, treatment, or any health matter. Do NOT ask what it is, and do NOT describe it anywhere.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "disclosed"
+      ],
+      "type": "object"
+    }
+  },
+  "server": {
+    "credentialId": "${VAPI_TOOLS_CREDENTIAL_ID}",
+    "timeoutSeconds": 10,
+    "url": "${GRACE_TOOLS_URL}"
+  },
+  "type": "function"
+}

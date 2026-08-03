@@ -1,0 +1,50 @@
+{
+  "async": false,
+  "function": {
+    "description": "Get services, durations and prices. Call this before stating ANY price or service length. Never quote a price this tool did not return, and never estimate or say \"usually about\". If it reports the catalogue is unapproved, say you will have someone confirm the price and escalate.",
+    "name": "getServicesAndPricing",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "isMember": {
+          "default": false,
+          "description": "Set true only if lookupCustomer already confirmed membership. Never assume.",
+          "type": "boolean"
+        },
+        "query": {
+          "description": "What the caller asked for, in their words, e.g. '60 minute massage' or 'deep tissue'. Pass it through verbatim.",
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "type": "object"
+    }
+  },
+  "messages": [
+    {
+      "content": "I'm having trouble pulling up our pricing right now.",
+      "type": "request-failed"
+    }
+  ],
+  "server": {
+    "backoffPlan": {
+      "baseDelaySeconds": 1,
+      "excludedStatusCodes": [
+        400,
+        401,
+        409,
+        422
+      ],
+      "maxRetries": 1,
+      "type": "fixed"
+    },
+    "credentialId": "${VAPI_TOOLS_CREDENTIAL_ID}",
+    "timeoutSeconds": 10,
+    "url": "${GRACE_TOOLS_URL}"
+  },
+  "type": "function"
+}

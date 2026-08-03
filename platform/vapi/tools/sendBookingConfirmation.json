@@ -1,0 +1,34 @@
+{
+  "async": true,
+  "function": {
+    "description": "Text the booking confirmation. Call this after booking, rescheduling, or cancelling so the caller has it in writing.",
+    "name": "sendBookingConfirmation",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "bookingRef": {
+          "description": "Booking reference exactly as it was given to you, e.g. bk-3QR9.",
+          "pattern": "^bk-[0-9A-HJKMNP-TV-Z]{4,8}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "bookingRef"
+      ],
+      "type": "object"
+    }
+  },
+  "messages": [
+    {
+      "blocking": true,
+      "content": "I'm sending your confirmation by text.",
+      "type": "request-start"
+    }
+  ],
+  "server": {
+    "credentialId": "${VAPI_TOOLS_CREDENTIAL_ID}",
+    "timeoutSeconds": 10,
+    "url": "${GRACE_TOOLS_URL}"
+  },
+  "type": "function"
+}

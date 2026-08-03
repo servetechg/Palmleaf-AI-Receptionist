@@ -1,0 +1,53 @@
+{
+  "async": true,
+  "function": {
+    "description": "Call this IMMEDIATELY BEFORE transferToHuman, every single time. It creates the staff task and gives the person picking up the context they need — without it they answer blind. Summarise in one sentence, and never put medical or health detail in the summary; say \"a health matter\" instead.",
+    "name": "flagEscalation",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "description": "Why you are handing off. Pick the closest match.",
+          "enum": [
+            "asked_for_person",
+            "frustrated",
+            "complaint",
+            "refund",
+            "gift_certificate",
+            "medical",
+            "recording_objection",
+            "no_tool",
+            "repeated_failure"
+          ],
+          "type": "string"
+        },
+        "summary": {
+          "description": "One sentence of context for the person picking up, e.g. \"Caller wants to dispute a late-cancel fee.\" NEVER include medical, health, or diagnostic detail — say \"a health matter\" instead.",
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "urgency": {
+          "default": "normal",
+          "description": "Use 'high' only if the caller is upset or the matter is time-critical.",
+          "enum": [
+            "normal",
+            "high"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "reason",
+        "summary"
+      ],
+      "type": "object"
+    }
+  },
+  "server": {
+    "credentialId": "${VAPI_TOOLS_CREDENTIAL_ID}",
+    "timeoutSeconds": 10,
+    "url": "${GRACE_TOOLS_URL}"
+  },
+  "type": "function"
+}

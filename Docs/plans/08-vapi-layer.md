@@ -124,11 +124,8 @@ schema and the handler cannot drift (§02 §4).
     "transfer-destination-request"
   ],
 
-  "silenceTimeoutSeconds": 20,
   "maxDurationSeconds": 900,
-  "backgroundDenoisingEnabled": true,
-  "backchannelingEnabled": false,
-  "endCallFunctionEnabled": true,
+  "backgroundSpeechDenoisingPlan": { "smartDenoisingPlan": { "enabled": true } },
   "endCallPhrases": ["goodbye", "have a great day"],
 
   "voicemailDetection": { "provider": "vapi", "enabled": true },
@@ -166,6 +163,28 @@ schema and the handler cannot drift (§02 §4).
 - **`analysisPlan`** — deprecated in its entirety. See §3.4.
 - **`model.fallbackModels`** — the spec's own description says not to set this without a specific reason;
   Vapi picks sensible fallbacks. Revisit only if we observe a provider outage.
+- **`silenceTimeoutSeconds`, `backchannelingEnabled`, `endCallFunctionEnabled`** — ✅ verified: **none of
+  these are properties of `CreateAssistantDTO`**. They were carried forward from an older API and were
+  still present in the first draft of this rewrite; `platform/vapi/validate.ts` caught them. See §3.6.
+- **`backgroundDenoisingEnabled`** — renamed. It is now
+  `backgroundSpeechDenoisingPlan: { smartDenoisingPlan: { enabled } }`.
+
+### 3.6 Fields that no longer exist — and how we catch the next one
+
+Four keys in the previous config are simply not in `CreateAssistantDTO` today. Vapi rejects unknown keys,
+so each is a deploy-time 400 rather than a silent no-op:
+
+| Removed | Replacement |
+|---|---|
+| `silenceTimeoutSeconds` | none at assistant level (exists only on `TransferAssistant`) |
+| `backchannelingEnabled` | none; see `stopSpeakingPlan.acknowledgementPhrases` for related behaviour |
+| `backgroundDenoisingEnabled` | `backgroundSpeechDenoisingPlan.smartDenoisingPlan.enabled` |
+| `endCallFunctionEnabled` | **an explicit `type: "endCall"` tool** — see §4 |
+
+The lesson is not the list, it is the mechanism: **`platform/vapi/validate.ts` checks every key in
+`grace.json` against the live `CreateAssistantDTO` property set and fails on any unknown or `deprecated`
+key, offline, in under a second.** That check is what found all four, and it is why T1 (§9.1) runs on
+every PR. Do not hand-audit this file — run the validator.
 
 ### 3.2 `serverMessages` and the server-URL split
 
@@ -285,9 +304,16 @@ regression-test event (§13 §7, assumption **A-07**).
 
 ## 4. Tool catalogue
 
-14 tool objects: the 13 from the design brief, plus `flagEscalation`, which §7 shows is not optional.
-`endCallFunctionEnabled: true` causes Vapi to add its own `endCall` tool, so AC-08.4 counts *our* tools,
-not the total registered.
+**15 tool objects: 13 generated from zod, plus 2 hand-authored Vapi tool types.**
+
+- 13 `function` tools generated from the registry in `@grace/contracts` — the 12 from the design brief
+  that survive, plus `flagEscalation`, which §7 shows is structurally required.
+- `transferToHuman` — `type: "transferCall"`, hand-authored (§7.1).
+- `endCall` — `type: "endCall"`, hand-authored. ✅ Verified: `endCallFunctionEnabled` **is not a property
+  of `CreateAssistantDTO`**. Hanging up is an explicit tool now, not an assistant flag, so it must be
+  registered like any other (§3.6).
+
+Neither hand-authored tool has a `function` property, so neither takes parameters.
 
 | # | Tool | Kind | Sync | Budget | Idempotent | Emits outbox | Notes |
 |---|---|---|---|---|---|---|---|
@@ -301,10 +327,11 @@ not the total registered.
 | 8 | `sendIntakeForm` | function | async | — | ✅ | ✅ | ack via `request-start`, not `result` (§4.2) |
 | 9 | `sendDepositLink` | function | async | — | ✅ | ✅ | |
 | 10 | `sendBookingConfirmation` | function | async | — | ✅ | ✅ | |
-| 11 | `transferToHuman` | **transferCall** | — | — | — | — | No parameters — see §7 |
+| 11 | `transferToHuman` | **transferCall** | — | — | — | — | Hand-authored. No parameters — see §7 |
 | 12 | `takeMessage` | function | ✅ | 300ms | ✅ | ✅ | Structured → staff queue |
 | 13 | `flagMedicalHold` | function | ✅ | 300ms | ✅ | ✅ | Boolean only (I6) |
-| 14 | `flagEscalation` | function | async | — | ✅ | ✅ | Primes the whisper + staff task before transfer (§7) |
+| 14 | `flagEscalation` | function | async | — | ✅ | ✅ | Primes the whisper + staff task before transfer (§7). Deliberately silent — `transferToHuman` speaks immediately after |
+| 15 | `endCall` | **endCall** | — | — | — | — | Hand-authored. Replaces the removed `endCallFunctionEnabled` flag (§3.6) |
 
 > **Budgets are p95 targets, not deadlines.** §04 §6.4 must not race a handler against the number in this
 > column — doing so fires the graceful-fallback sentence on ~5% of calls *by construction*. The deadline is
@@ -804,7 +831,8 @@ Auditable list of what changed and why. Cross-doc consequences are carried into 
 | 10 | "Vapi retries with the same `toolCallId`" (§06 §6.1) | no retry by default; opt-in `backoffPlan` on reads (§4.1) | False premise under the idempotency design |
 | 11 | async tools ack via `result` | ack via `request-start` (§4.2) | Caller hears silence |
 | 12 | budgets raced as hard deadlines (§04 §6.4) | p95 targets; deadline is `GRACE_TOOL_DEADLINE_MS` (§4) | Graceful fallback fires on ~5% of calls by construction |
-| 13 | 13 tools | 14, plus Vapi's own `endCall` (§4) | AC-08.4 miscounts |
+| 13 | 13 tools | **15**: 13 generated + `transferToHuman` + `endCall` (§4) | AC-08.4 miscounts |
+| 16 | `silenceTimeoutSeconds`, `backchannelingEnabled`, `endCallFunctionEnabled`, `backgroundDenoisingEnabled` | removed or renamed (§3.6) | Deploy-time 400 on every apply |
 | 14 | recording consent assumed togglable | not implemented; objector is transferred (§6.1) | Unreachable path presented as a feature |
 | 15 | "design brief §9 recommends us-west-2" for core-api | §9 is the n8n workflow inventory; the note is about n8n (§11.1) | Misattributed citation behind A-08 |
 
@@ -822,8 +850,8 @@ comparison in §8.1 — and still reports zero after a Vapi-side default changes
 fails if it is not committed.
 ✅ **AC-08.3** Removing "may be recorded" from `first-message.txt` fails CI. **Inlining a literal
 `firstMessage` in `grace.json` also fails CI.**
-✅ **AC-08.4** All 14 of our tools exist in Vapi with the correct type, `async` flag, and server URL;
-`transferToHuman` is `type: "transferCall"` with empty `destinations`.
+✅ **AC-08.4** All 15 tools exist in Vapi with the correct type, `async` flag, and server URL;
+`transferToHuman` is `type: "transferCall"` with empty `destinations`, and `endCall` is `type: "endCall"`.
 ✅ **AC-08.5a** T1 + T2 green on every PR touching prompts, tools, or contracts.
 ✅ **AC-08.5b** T3 voice suite green on the nightly run for the released commit.
 ✅ **AC-08.6** Scenario 9 (card number) never results in digits appearing in the transcript store —

@@ -1,0 +1,46 @@
+{
+  "async": false,
+  "function": {
+    "description": "Answer a factual question about the business — hours, address, parking, how to reach us, what we offer, policies, or memberships. Call this instead of answering from memory; you do not know these facts. If the tool says it has no approved answer, do not improvise — escalate.",
+    "name": "getBusinessInfo",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "topic": {
+          "description": "What the caller asked about. Pick the closest match. If nothing fits, do NOT call this — escalate instead.",
+          "enum": [
+            "hours",
+            "location",
+            "parking",
+            "contact",
+            "services_overview",
+            "policies",
+            "memberships"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "topic"
+      ],
+      "type": "object"
+    }
+  },
+  "server": {
+    "backoffPlan": {
+      "baseDelaySeconds": 1,
+      "excludedStatusCodes": [
+        400,
+        401,
+        409,
+        422
+      ],
+      "maxRetries": 1,
+      "type": "fixed"
+    },
+    "credentialId": "${VAPI_TOOLS_CREDENTIAL_ID}",
+    "timeoutSeconds": 10,
+    "url": "${GRACE_TOOLS_URL}"
+  },
+  "type": "function"
+}

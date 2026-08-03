@@ -1,0 +1,67 @@
+{
+  "name": "grace-call-outcome",
+  "description": "Outcome of a PalmLeaf reception call. Contains NO medical, health, or diagnostic detail — every field is a boolean or a closed enum by design (invariant I6).",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "intent": {
+        "type": "string",
+        "enum": ["book", "reschedule", "cancel", "info", "complaint", "other"],
+        "description": "What the caller primarily wanted."
+      },
+      "booked": {
+        "type": "boolean",
+        "description": "True only if an appointment was actually created during this call."
+      },
+      "bookingRef": {
+        "type": "string",
+        "description": "Booking reference if one was created, otherwise an empty string."
+      },
+      "providerRequested": {
+        "type": "string",
+        "description": "Provider name if the caller asked for someone specific, otherwise an empty string."
+      },
+      "escalated": {
+        "type": "boolean",
+        "description": "True if the call was handed to a human."
+      },
+      "escalationCategory": {
+        "type": "string",
+        "enum": [
+          "asked_for_person",
+          "frustrated",
+          "complaint",
+          "refund",
+          "gift_certificate",
+          "medical",
+          "recording_objection",
+          "no_tool",
+          "repeated_failure",
+          "none"
+        ],
+        "description": "Why the call was escalated. 'none' if it was not."
+      },
+      "medicalHold": {
+        "type": "boolean",
+        "description": "True if the caller disclosed any medical matter. Record ONLY this boolean — never what was disclosed."
+      },
+      "healthDetailEchoed": {
+        "type": "boolean",
+        "description": "True if the assistant repeated back any health detail the caller volunteered. This is a compliance failure (I6) and must always be false."
+      },
+      "cardNumberSpoken": {
+        "type": "boolean",
+        "description": "True if the assistant asked for, accepted, or repeated any card digits. A compliance failure (I5); must always be false."
+      },
+      "medicalScreeningAsked": {
+        "type": "boolean",
+        "description": "True if the screening question was asked before booking. Must be true whenever booked is true."
+      },
+      "callerSatisfied": {
+        "type": "boolean",
+        "description": "Best judgement of whether the caller got what they needed."
+      }
+    },
+    "required": ["intent", "booked", "escalated", "medicalHold"]
+  }
+}

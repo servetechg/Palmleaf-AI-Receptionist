@@ -1,0 +1,10 @@
+{
+  "type": "endCall",
+  "messages": [
+    {
+      "type": "request-start",
+      "content": "Thanks for calling PalmLeaf — have a great day.",
+      "blocking": true
+    }
+  ]
+}

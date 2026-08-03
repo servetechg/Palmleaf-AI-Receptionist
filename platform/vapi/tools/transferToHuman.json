@@ -1,0 +1,11 @@
+{
+  "type": "transferCall",
+  "destinations": [],
+  "messages": [
+    {
+      "type": "request-start",
+      "content": "Of course — let me get someone for you.",
+      "blocking": true
+    }
+  ]
+}

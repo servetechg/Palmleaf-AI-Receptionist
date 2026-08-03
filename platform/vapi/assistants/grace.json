@@ -1,0 +1,81 @@
+{
+  "name": "Grace — PalmLeaf",
+
+  "firstMessage": "<injected from prompts/first-message.txt>",
+  "firstMessageMode": "assistant-speaks-first",
+
+  "model": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5",
+    "temperature": 0.3,
+    "maxTokens": 250,
+    "messages": [{ "role": "system", "content": "<injected from prompts/system.md>" }],
+    "toolIds": []
+  },
+
+  "voice": {
+    "provider": "11labs",
+    "voiceId": "sarah",
+    "model": "eleven_turbo_v2_5",
+    "stability": 0.5,
+    "similarityBoost": 0.75,
+    "optimizeStreamingLatency": 3,
+    "chunkPlan": { "enabled": true, "minCharacters": 30 }
+  },
+
+  "transcriber": {
+    "provider": "deepgram",
+    "model": "nova-3",
+    "language": "en-US",
+    "smartFormat": true,
+    "numerals": true,
+    "endpointing": 180,
+    "keywords": [
+      "PalmLeaf:2",
+      "Vagaro:1",
+      "Dundee:2",
+      "Buffalo:2",
+      "Grove:2",
+      "acupuncture:1",
+      "cryo:1"
+    ]
+  },
+
+  "startSpeakingPlan": {
+    "waitSeconds": 0.4,
+    "smartEndpointingEnabled": true,
+    "transcriptionEndpointingPlan": {
+      "onPunctuationSeconds": 0.1,
+      "onNoPunctuationSeconds": 1.2,
+      "onNumberSeconds": 0.6
+    }
+  },
+  "stopSpeakingPlan": { "numWords": 2, "voiceSeconds": 0.2, "backoffSeconds": 1.0 },
+
+  "server": {
+    "url": "${GRACE_EVENTS_URL}",
+    "timeoutSeconds": 10
+  },
+  "serverMessages": [
+    "end-of-call-report",
+    "status-update",
+    "hang",
+    "tool-calls",
+    "transfer-destination-request"
+  ],
+
+  "maxDurationSeconds": 900,
+  "backgroundSpeechDenoisingPlan": { "smartDenoisingPlan": { "enabled": true } },
+  "endCallPhrases": ["goodbye", "have a great day"],
+
+  "voicemailDetection": { "provider": "vapi" },
+
+  "compliancePlan": { "hipaaEnabled": false, "pciEnabled": false },
+
+  "artifactPlan": {
+    "recordingEnabled": true,
+    "loggingEnabled": true,
+    "transcriptPlan": { "enabled": true, "assistantName": "Grace" },
+    "structuredOutputIds": []
+  }
+}

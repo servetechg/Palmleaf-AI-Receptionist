@@ -1,0 +1,52 @@
+{
+  "async": false,
+  "function": {
+    "description": "Take a message for the team when nobody can be reached or the caller prefers a callback. Capture their name, callback number, and a one-line subject. Never record health or medical detail.",
+    "name": "takeMessage",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "description": "Any extra detail the caller gave. Again: no health or medical detail, ever.",
+          "maxLength": 600,
+          "type": "string"
+        },
+        "callbackNumber": {
+          "description": "Number to call back. Default to the number they are calling from unless they give a different one.",
+          "pattern": "^\\+[1-9]\\d{7,14}$",
+          "type": "string"
+        },
+        "callerName": {
+          "maxLength": 80,
+          "minLength": 1,
+          "type": "string"
+        },
+        "subject": {
+          "description": "One short line: what it is about. NEVER include health or medical detail.",
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "callerName",
+        "callbackNumber",
+        "subject"
+      ],
+      "type": "object"
+    }
+  },
+  "messages": [
+    {
+      "blocking": false,
+      "content": "Let me take that down.",
+      "type": "request-start"
+    }
+  ],
+  "server": {
+    "credentialId": "${VAPI_TOOLS_CREDENTIAL_ID}",
+    "timeoutSeconds": 10,
+    "url": "${GRACE_TOOLS_URL}"
+  },
+  "type": "function"
+}

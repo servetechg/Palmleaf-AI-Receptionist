@@ -1,0 +1,77 @@
+{
+  "async": false,
+  "function": {
+    "description": "Find open appointment times. Call this whenever the caller asks about availability, mentions a day or time they'd like, or after they choose a service. NEVER guess or state a time this tool did not return. If the caller says something vague like 'sometime next week', pick the first date of that range and call this — you can call it again for other days.",
+    "name": "checkAvailability",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "partySize": {
+          "default": 1,
+          "description": "Number of people. Almost always 1.",
+          "maximum": 4,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "preferredDate": {
+          "description": "Local date in YYYY-MM-DD. Today or later. Never guess a year the caller did not say.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        "providerPreference": {
+          "description": "Provider name if the caller asked for someone specific. Omit if they did not.",
+          "type": "string"
+        },
+        "serviceCode": {
+          "description": "Service code, e.g. massage_60. Call getServicesAndPricing first to get it.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "timePreference": {
+          "default": "any",
+          "description": "Rough time of day the caller asked for. Use 'any' if they did not say.",
+          "enum": [
+            "morning",
+            "afternoon",
+            "evening",
+            "any"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "serviceCode",
+        "preferredDate"
+      ],
+      "type": "object"
+    }
+  },
+  "messages": [
+    {
+      "blocking": false,
+      "content": "Let me check the schedule.",
+      "type": "request-start"
+    },
+    {
+      "content": "I'm having trouble reaching the schedule right now.",
+      "type": "request-failed"
+    }
+  ],
+  "server": {
+    "backoffPlan": {
+      "baseDelaySeconds": 1,
+      "excludedStatusCodes": [
+        400,
+        401,
+        409,
+        422
+      ],
+      "maxRetries": 1,
+      "type": "fixed"
+    },
+    "credentialId": "${VAPI_TOOLS_CREDENTIAL_ID}",
+    "timeoutSeconds": 10,
+    "url": "${GRACE_TOOLS_URL}"
+  },
+  "type": "function"
+}

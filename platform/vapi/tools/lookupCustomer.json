@@ -1,0 +1,38 @@
+{
+  "async": false,
+  "function": {
+    "description": "Look up the caller by the number they are calling from, so you can greet them by name and know if they are a member. Call this early. It tells you IF they are a member but NOT what members pay — always call getServicesAndPricing for any price.",
+    "name": "lookupCustomer",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "phone": {
+          "description": "The caller's own number from caller ID. You may NOT look up any other number — asking a caller for someone else's number and querying it is not permitted.",
+          "pattern": "^\\+[1-9]\\d{7,14}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "phone"
+      ],
+      "type": "object"
+    }
+  },
+  "server": {
+    "backoffPlan": {
+      "baseDelaySeconds": 1,
+      "excludedStatusCodes": [
+        400,
+        401,
+        409,
+        422
+      ],
+      "maxRetries": 1,
+      "type": "fixed"
+    },
+    "credentialId": "${VAPI_TOOLS_CREDENTIAL_ID}",
+    "timeoutSeconds": 10,
+    "url": "${GRACE_TOOLS_URL}"
+  },
+  "type": "function"
+}

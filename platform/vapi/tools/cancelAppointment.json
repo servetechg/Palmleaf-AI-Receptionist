@@ -1,0 +1,43 @@
+{
+  "async": false,
+  "function": {
+    "description": "Cancel an existing appointment. The tool decides whether a cancellation fee applies — you do not, and you must never waive one. State the fee it returns before confirming. If the caller disputes it, escalate rather than arguing.",
+    "name": "cancelAppointment",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "bookingRef": {
+          "description": "Booking reference exactly as it was given to you, e.g. bk-3QR9.",
+          "pattern": "^bk-[0-9A-HJKMNP-TV-Z]{4,8}$",
+          "type": "string"
+        },
+        "feeAcknowledged": {
+          "default": false,
+          "description": "Set true only after stating the cancellation fee and hearing the caller accept it.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "bookingRef"
+      ],
+      "type": "object"
+    }
+  },
+  "messages": [
+    {
+      "blocking": false,
+      "content": "Let me pull that up.",
+      "type": "request-start"
+    },
+    {
+      "content": "I'm having trouble cancelling that appointment.",
+      "type": "request-failed"
+    }
+  ],
+  "server": {
+    "credentialId": "${VAPI_TOOLS_CREDENTIAL_ID}",
+    "timeoutSeconds": 10,
+    "url": "${GRACE_TOOLS_URL}"
+  },
+  "type": "function"
+}

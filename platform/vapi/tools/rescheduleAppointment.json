@@ -1,0 +1,60 @@
+{
+  "async": false,
+  "function": {
+    "description": "Move an existing appointment to a new day or time. The tool decides whether a change fee applies — you do not. State the fee it returns, in full, before confirming, and only set feeAcknowledged once the caller has agreed.",
+    "name": "rescheduleAppointment",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "bookingRef": {
+          "description": "Booking reference exactly as it was given to you, e.g. bk-3QR9.",
+          "pattern": "^bk-[0-9A-HJKMNP-TV-Z]{4,8}$",
+          "type": "string"
+        },
+        "feeAcknowledged": {
+          "default": false,
+          "description": "Set true only after you have stated the change fee and the caller agreed. Never assume agreement.",
+          "type": "boolean"
+        },
+        "newDate": {
+          "description": "Local date in YYYY-MM-DD. Today or later. Never guess a year the caller did not say.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        "newTimePreference": {
+          "default": "any",
+          "description": "Rough time of day the caller asked for. Use 'any' if they did not say.",
+          "enum": [
+            "morning",
+            "afternoon",
+            "evening",
+            "any"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "bookingRef",
+        "newDate"
+      ],
+      "type": "object"
+    }
+  },
+  "messages": [
+    {
+      "blocking": false,
+      "content": "Let me look at that for you.",
+      "type": "request-start"
+    },
+    {
+      "content": "I'm having trouble changing that appointment.",
+      "type": "request-failed"
+    }
+  ],
+  "server": {
+    "credentialId": "${VAPI_TOOLS_CREDENTIAL_ID}",
+    "timeoutSeconds": 10,
+    "url": "${GRACE_TOOLS_URL}"
+  },
+  "type": "function"
+}
