@@ -1,0 +1,33 @@
+{
+  "name": "palmleaf-grace",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "check": "pnpm -r run typecheck && pnpm -r run lint && pnpm -r run test",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "platform:vapi:generate": "tsx platform/vapi/generate-tools.ts",
+    "platform:vapi:diff": "tsx platform/vapi/deploy.ts --diff",
+    "platform:vapi:deploy": "tsx platform/vapi/deploy.ts",
+    "platform:vapi:mock": "tsx platform/vapi/mock-server/server.ts",
+    "platform:n8n:diff": "tsx platform/n8n/deploy.ts --diff",
+    "platform:n8n:deploy": "tsx platform/n8n/deploy.ts",
+    "platform:n8n:lint": "tsx platform/n8n/lint.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "tsx": "^4.19.0",
+    "eslint": "^9.9.0",
+    "@eslint/js": "^9.9.0",
+    "typescript-eslint": "^8.0.0",
+    "eslint-plugin-import-x": "^4.0.0",
+    "prettier": "^3.3.0",
+    "vitest": "^2.1.0"
+  }
+}

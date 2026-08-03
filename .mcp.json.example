@@ -1,0 +1,32 @@
+{
+  "//": "DEV CREDENTIALS ONLY. Copy to .mcp.json. Values are read from environment variables at",
+  "//  ": "Claude Code startup via ${VAR} expansion, so no secret is ever written to this file.",
+  "// setup": "See Docs/plans/19-vapi-n8n-execution-plan.md Step 0 for how to obtain each value.",
+  "// required-env": [
+    "VAPI_API_KEY    - Vapi dashboard -> Organization Settings -> API Keys -> PRIVATE key",
+    "N8N_MCP_URL     - n8n Cloud -> Settings -> Instance-level MCP -> the URL shown there (copy verbatim)",
+    "N8N_MCP_TOKEN   - n8n Cloud -> Settings -> Instance-level MCP -> Create MCP Access Token (shown once)"
+  ],
+  "// warning": "Never place a PRODUCTION n8n token here. Invariant I9 / ADR-0010 / ADR-0013.",
+
+  "mcpServers": {
+    "vapi": {
+      "type": "http",
+      "url": "https://mcp.vapi.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${VAPI_API_KEY}"
+      }
+    },
+    "vapi-docs": {
+      "type": "http",
+      "url": "https://docs.vapi.ai/_mcp/server"
+    },
+    "n8n": {
+      "type": "http",
+      "url": "${N8N_MCP_URL}",
+      "headers": {
+        "Authorization": "Bearer ${N8N_MCP_TOKEN}"
+      }
+    }
+  }
+}

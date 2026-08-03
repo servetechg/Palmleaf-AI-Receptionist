@@ -1,0 +1,38 @@
+# MCP config — resolves secrets from env vars, but never commit the live file.
+# Commit .mcp.json.example instead. Invariant I9.
+.mcp.json
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Vapi / n8n platform local state
+platform/vapi/.lock.local.json
+platform/n8n/.lock.local.json
+
+# Node
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+.pnpm-store/
+
+# Test / coverage
+coverage/
+.vitest/
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Claude Code session state (transcripts, subagent logs) — not project source
+.claude/
