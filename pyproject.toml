@@ -44,7 +44,8 @@ select = [
 ]
 ignore = [
     "E501",    # line length is handled by the formatter
-    "RUF002",  # en dashes in docstrings are deliberate typography ("Tools 1–4")
+    "RUF001",  # en dashes in generated markdown are deliberate typography ("length 1–4")
+    "RUF002",  # same, in docstrings
     "RUF003",  # same, in comments
 ]
 

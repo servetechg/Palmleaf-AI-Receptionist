@@ -43,7 +43,7 @@ is shaped the way it is, it is because of one of these.
                                   │ HTTPS tool call (POST, HMAC-signed)
                                   │ ── SYNCHRONOUS BUDGET: p95 < 400 ms ──
 ┌─────────────────────────────────▼─────────────────────────────────────────┐
-│ L2  CORE API  (apps/core-api, Fastify + TS)                               │
+│ L2  CORE API  (grace_api — FastAPI + Python 3.12)                         │
 │     ┌──────────────┬──────────────┬──────────────┬─────────────────────┐  │
 │     │ tool router  │ idempotency  │ deadline     │ hmac + tenant       │  │
 │     └──────────────┴──────────────┴──────────────┴─────────────────────┘  │
@@ -51,7 +51,7 @@ is shaped the way it is, it is because of one of these.
 └───────┬─────────────────────────────────────────────────┬─────────────────┘
         │ calls (in-process)                              │ writes
 ┌───────▼─────────────────────────────────┐   ┌───────────▼─────────────────┐
-│ L3  DOMAIN  (packages/domain)           │   │ L4  PERSISTENCE             │
+│ L3  DOMAIN  (grace_domain)              │   │ L4  PERSISTENCE             │
 │  · availability engine                  │   │  Postgres 16                │
 │  · hold / reservation state machine     │◄──┤  · availability mirror      │
 │  · 48-hour change-fee engine            │   │  · occupancy (EXCLUDE)      │
@@ -62,13 +62,13 @@ is shaped the way it is, it is because of one of these.
                                                           │ outbox dispatch
 ┌─────────────────────────────────────────────────────────▼─────────────────┐
 │ L5  ASYNC EXECUTION                                                       │
-│   apps/sync-worker (BullMQ)          apps/booking-worker (Playwright)     │
+│   sync-worker (arq)                  booking-worker (Playwright)          │
 │   n8n (ops workflows, staff alerting, low-code integrations)              │
 │   ── NO LATENCY BUDGET. Retries, backoff, dead-letter. ──                 │
 └─────────────────────────────────────────────────────────┬─────────────────┘
                                                           │
 ┌─────────────────────────────────────────────────────────▼─────────────────┐
-│ L6  PORTS & ADAPTERS   (packages/adapters)                                │
+│ L6  PORTS & ADAPTERS   (grace_adapters)                                   │
 │   PmsPort ──► VagaroAdapter (+ future: MindbodyAdapter, BookerAdapter)    │
 │   CalendarPort ──► GoogleCalendarAdapter                                  │
 │   PaymentsPort ──► StripeAdapter    MessagingPort ──► TwilioAdapter       │
@@ -81,8 +81,8 @@ is shaped the way it is, it is because of one of these.
 ```
 
 **The dependency rule:** dependencies point inward and downward only.
-`L3 domain` imports nothing from `L2`, `L5`, or `L6`. Adapters depend on port interfaces defined in
-`packages/contracts`, never the reverse. This is enforced by an ESLint boundary rule (§02 §6).
+`grace_domain` imports nothing from `L2`, `L5`, or `L6`. Adapters depend on port protocols defined in
+`grace_contracts`, never the reverse. Enforced by **import-linter** contracts in CI (ADR-0018).
 
 ---
 
@@ -98,7 +98,7 @@ Vapi tool call
   → HMAC verify (≈1ms)
   → tenant resolve from cache (≈0ms)
   → idempotency check (1 indexed SELECT, ≈2ms)
-  → zod parse (≈0ms)
+  → Pydantic parse (≈0ms)
   → handler: 1–3 Postgres queries against local mirror (≈10–40ms)
   → domain computation, pure (≈1ms)
   → format natural-language string (≈0ms)
@@ -109,15 +109,15 @@ TOTAL BUDGET: p50 < 120ms, p95 < 400ms, hard deadline 2500ms
 
 **Permitted on the hot path:** Postgres (local), Redis (local), pure computation.
 **Forbidden on the hot path:** Vagaro, Google Calendar, Stripe, Twilio, n8n, Playwright, any LLM call,
-any network egress to a third party. **No exceptions.** Enforced by `no-restricted-imports` in the
-`core-api` handler directory (§02 §6).
+any network egress to a third party. **No exceptions.** Enforced by an import-linter contract on
+`grace_api.routes.vapi.handlers` (ADR-0018).
 
 ### 3.2 The cold path (asynchronous, nobody is waiting)
 
 ```
 outbox row committed
   → dispatcher polls (250ms tick) or is woken by NOTIFY
-  → enqueues BullMQ job (at-least-once)
+  → enqueues an arq job (at-least-once)
   → worker executes: adapter call with retry + circuit breaker
   → success: mark outbox row done, emit domain event
   → failure: exponential backoff, N attempts, then dead-letter + staff task
@@ -161,10 +161,10 @@ or if the team composition changes to Python-primary.
 
 ### ADR-0002 — Core API owns synchronous tools; n8n owns asynchronous orchestration
 
-**Decision.** The Vapi tools are served by `apps/core-api`, a typed Fastify service. n8n remains in the
+**Decision.** The Vapi tools are served by `grace_api`, a typed FastAPI service (ADR-0017). n8n remains in the
 architecture and owns: the Vagaro webhook **fan-out to secondary consumers**, staff alerting and
-escalation, operational digests, the nightly reconciliation **report**, staff actions from Slack, and any
-future low-code integration the client's team wants to modify without a deploy.
+escalation, operational digests, the nightly reconciliation **report**, and any future low-code
+integration the client's team wants to modify without a deploy.
 
 > *Corrected 2026-08-03.* This paragraph previously also credited n8n with "end-of-call post-processing"
 > and "SMS templating dispatch". Both moved into code — transcript processing is the
@@ -189,7 +189,7 @@ is spelled out:
    correct handling of the resulting serialization errors with retry. This is application-code work.
 
 **What n8n is genuinely better at, and therefore keeps.** Ops workflows a non-developer may need to
-change; fan-out to Slack/email/SMS with visual routing; connector breadth for integrations we have not
+change; notification fan-out with visual routing; connector breadth for integrations we have not
 foreseen; and giving the client's technical contact a legible view of the operational plumbing.
 
 **Fallback if this decision is rejected.** The tool endpoints are thin: HTTP in, JSON out, all logic in
@@ -252,7 +252,7 @@ recover gracefully ("that one just went — I also have 6:30"). This is specifie
 ### ADR-0005 — Transactional outbox for every externally-visible side effect
 
 **Decision.** Domain writes and their side effects are committed in one transaction: the business rows plus
-one `outbox_events` row per side effect. A dispatcher moves outbox rows into BullMQ. Workers execute them
+one `outbox_events` row per side effect. A dispatcher moves outbox rows onto an arq queue (ADR-0015). Workers execute them
 with retry, backoff, and dead-lettering.
 
 **Why.** F2 and I8. The alternative — call Stripe/Twilio/Google inline, or enqueue directly to Redis — loses
@@ -286,8 +286,9 @@ Track B is deleted. The saga is designed to make that deletion a small diff — 
 
 ### ADR-0007 — Ports and adapters for every external system
 
-**Decision.** `packages/contracts` defines `PmsPort`, `CalendarPort`, `PaymentsPort`, `MessagingPort`,
-`VoicePort`. `packages/adapters` implements them. Domain and handlers depend only on the port.
+**Decision.** `grace_contracts` defines `PmsPort`, `CalendarPort`, `PaymentsPort`, `MessagingPort`,
+`VoicePort` as `typing.Protocol` classes. `grace_adapters` implements them. Domain and handlers depend
+only on the protocol.
 
 **Why.** F2 and F6. The Vagaro write-path answer is unknown at design time (§17 GATE-01), so the code must
 tolerate three different Vagaro futures without a rewrite. The same port makes a second PMS a new package,
@@ -311,7 +312,11 @@ production load, with live customer data. Adding it now costs one column and one
 
 ---
 
-### ADR-0009 — Drizzle ORM with hand-written SQL for the hot path
+### ADR-0009 — ~~Drizzle ORM~~ with hand-written SQL for the hot path
+
+> ⚠️ **The ORM choice here is SUPERSEDED by ADR-0016 (SQLAlchemy 2.0 + Alembic).** The
+> *reasoning* — schema and migrations from a typed source, but hand-written SQL for the two
+> queries that decide whether the product feels fast — is language-independent and still holds.
 
 **Decision.** Drizzle for schema definition, migrations, and ordinary CRUD. The availability query and
 the occupancy insert are hand-written SQL (via Drizzle's `sql` template) because they use `tstzrange`,
@@ -389,7 +394,7 @@ disproportionate to a single-tenant pilot.
 
 **Decision.** Run one instance. Separate dev from prod by **tag** (`env:dev` / `env:prod`, plus
 `managed:git`), **name prefix** (`[dev] ` / `[prod] `), **webhook path prefix**, and **per-environment
-credentials**. `deploy.ts` filters on the tag pair and refuses to touch anything lacking it. CI holds the
+credentials**. `deploy.py` filters on the tag pair and refuses to touch anything lacking it. CI holds the
 only production API key and is the only publisher.
 
 **What this costs us, stated plainly** — the enforcement is convention plus detection, not permission:
@@ -472,6 +477,162 @@ n8n capability ships as a JS-only SDK with no REST equivalent.
 
 ---
 
+> **ADR-0015 to ADR-0018 exist because of ADR-0014.** The port moved the code that exists, but
+> this document set describes a much larger system that is not built yet — Core API, background
+> workers, the database — and it named TypeScript libraries throughout. Rewriting those
+> documents in Python means naming the Python equivalent. For most things that is a
+> find-and-replace. For these four it is a real decision, and leaving one unmade would mean
+> rewriting a document with a hole in it.
+>
+> Three are library choices. **The fourth is a safety guarantee that would otherwise be lost
+> silently.**
+
+---
+
+### ADR-0015 — Job queue: arq. Replaces BullMQ.
+
+**Status.** Accepted 2026-08-04, consequent on ADR-0014.
+
+**What it is for.** When Grace books an appointment, sending the confirmation text must not make
+the caller wait. The tool handler writes an outbox row and returns; a worker sends the text
+moments later. That worker needs a queue.
+
+**Decision.** **arq** — Redis-backed, async-native, with scheduled and delayed jobs.
+
+**Why this is a decision and not a rename.** ADR-0005's outbox design leans on one specific
+BullMQ behaviour: **enqueuing the same `jobId` twice runs the job once.** That is what stops a
+caller receiving two confirmation texts when a dispatcher retries after a crash. §07 states the
+guarantee explicitly — `jobId = outbox_events.id`, and *"BullMQ dedupes on jobId."*
+
+Python's queues do not all provide this identically:
+
+| Option | Why not |
+|---|---|
+| **Celery** | Heavier, sync-first, and its dedupe story is an add-on rather than a primitive |
+| **Dramatiq** | Clean, but scheduling and delayed jobs need an extension |
+| **SAQ** | Very close to arq; smaller community |
+| **Postgres `LISTEN/NOTIFY` + a jobs table** | No new dependency, and dedupe becomes a `UNIQUE` index we control. Genuinely viable — the fallback if arq disappoints |
+
+arq keeps Redis, which is already in the topology for caching and locks, and its API is the
+closest analogue to what §07 already describes.
+
+⚠️ **The dedupe guarantee must be re-derived against arq, not assumed.** arq deduplicates by
+`job_id` within a keep-alive window, which is *not* the same lifetime guarantee BullMQ gives. If
+the window proves too short, the answer is a `UNIQUE` constraint on the consumer side — which
+§07 §3 already requires anyway, because delivery is at-least-once regardless.
+
+**Exit criteria.** Revisit if arq's dedupe window cannot be reconciled with the outbox
+retry schedule, or if the worker fleet outgrows a single Redis.
+
+---
+
+### ADR-0016 — Database toolkit: SQLAlchemy 2.0 + Alembic. Supersedes ADR-0009.
+
+**Status.** Accepted 2026-08-04, replacing ADR-0009's choice of Drizzle.
+
+**What it is for.** Defining tables, generating migrations, and ordinary reads and writes.
+
+**Decision.** **SQLAlchemy 2.0** with **Alembic** for migrations. The two hot-path queries stay
+hand-written SQL, exactly as ADR-0009 intended — that reasoning was language-independent and
+still holds.
+
+**Why this is a decision and not a rename.** Double-booking is not prevented by application
+logic. It is prevented by a Postgres `EXCLUDE` constraint over a `tstzrange` with a GiST index,
+which makes two overlapping active rows for one provider **physically impossible to insert**
+(ADR-0004). That is the strongest guarantee in the system and everything else assumes it.
+
+SQLAlchemy 2.0 expresses it via `postgresql.ExcludeConstraint`, and Alembic can autogenerate it.
+Both were verified as capable before this ADR was written — but the constraint is load-bearing
+enough that it is named here rather than assumed.
+
+**Alternatives.** Raw `asyncpg` with hand-written migrations (maximum control, loses schema
+typing and migration ergonomics). SQLModel (thin layer over SQLAlchemy; adds a dependency
+without removing the need to understand SQLAlchemy underneath).
+
+**Exit criteria.** Revisit if Alembic autogeneration proves unable to round-trip the exclusion
+constraint or the GiST index, in which case those migrations become hand-written.
+
+---
+
+### ADR-0017 — Web framework: FastAPI. Replaces Fastify.
+
+**Status.** Accepted 2026-08-04, consequent on ADR-0014.
+
+**What it is for.** Serving the Vapi tool endpoint and the webhooks — the hot path.
+
+**Decision.** **FastAPI** on **uvicorn**, with Pydantic models already defined in
+`grace_contracts` reused directly as request models.
+
+**Why this is a decision and not a rename.** §04 does not merely say "a web framework" — it
+specifies an exact execution order: capture the raw body, verify the signature, resolve the
+tenant, open the deadline, check idempotency, then dispatch. Fastify enforces that through
+ordered plugin registration with encapsulation. FastAPI has no equivalent construct:
+
+| Fastify | FastAPI |
+|---|---|
+| Ordered plugin registration | Middleware stack (outermost first) + `Depends` (per-route) |
+| `AsyncLocalStorage` for request context | `contextvars` |
+| Plugin encapsulation scoping | Explicit router inclusion with dependencies |
+
+The distinction matters because signature verification needs the **raw** body before parsing,
+and the deadline must start before any handler work. In FastAPI that means middleware for the
+first two, dependencies for the rest — a different shape, so §04 §3 and §6 are rewritten rather
+than renamed.
+
+**Exit criteria.** None foreseen. Revisit only if per-request overhead measurably threatens the
+p95 budget, which at this scale it will not.
+
+---
+
+### ADR-0018 — Import boundaries: import-linter. Replaces the ESLint boundary rules.
+
+**Status.** Accepted 2026-08-04, consequent on ADR-0014.
+
+**What it is for.** Making it **impossible to accidentally call Vagaro, Stripe, Twilio or Google
+from the code path where a caller is waiting on the line.** That is invariant I1, and it is the
+difference between a fast answer and dead air.
+
+**Decision.** **import-linter** contracts, run in CI.
+
+**Why this is a decision and not a rename.** The ESLint rules §02 defined were not a style
+preference — they were a mechanical control enforcing the dependency rule in §2 and invariant
+I1. **ruff cannot express them.** ruff's `flake8-tidy-imports` can ban a module globally, but not
+"this package may not import that package" per-layer, which is what the architecture needs.
+
+Without a replacement the protection disappears **silently** — no error, no warning, just a
+guarantee that quietly stopped being enforced. That is the worst kind of regression, and it is
+why this warrants an ADR rather than a line in the tooling doc.
+
+```ini
+# TARGET — .importlinter
+[importlinter]
+root_packages = grace_contracts, grace_domain, grace_db, grace_adapters, grace_api
+
+[importlinter:contract:1]
+name = contracts depends on nothing
+type = forbidden
+source_modules = grace_contracts
+forbidden_modules = grace_domain, grace_db, grace_adapters, grace_api
+
+[importlinter:contract:2]
+name = domain is pure — no I/O
+type = forbidden
+source_modules = grace_domain
+forbidden_modules = grace_db, grace_adapters, httpx, asyncpg, redis
+
+[importlinter:contract:3]
+name = I1 — the hot path cannot reach a third party
+type = forbidden
+source_modules = grace_api.routes.vapi.handlers
+forbidden_modules = grace_adapters
+```
+
+Restores AC-02.3 and AC-04.10, which were unenforceable after the port.
+
+**Exit criteria.** None. Cost is one CI step; the guarantee is load-bearing.
+
+---
+
 ## 5. Quality attribute targets
 
 These are the numbers the architecture is designed to hit. §12 defines how they are measured and alerted.
@@ -507,8 +668,8 @@ Stating these prevents well-intentioned scope creep.
 | Storing medical detail | PHI minimization (I6). |
 | A custom STT/TTS/LLM stack | Vapi's managed pipeline is better than we would build and is not the differentiator. |
 | Kubernetes | Two services and two workers at this scale. Docker Compose on a VPS, with a documented ECS path (§14 §7). |
-| An event bus (Kafka/NATS) | Outbox + BullMQ is sufficient to ≥100× current volume. |
-| A separate microservice per tool | 13 tools sharing one database and one domain model. Distribution would add latency and failure modes for no benefit. |
+| An event bus (Kafka/NATS) | Outbox + arq is sufficient to ≥100× current volume. |
+| A separate microservice per tool | 15 tools sharing one database and one domain model. Distribution would add latency and failure modes for no benefit. |
 | Real-time staff UI in Phase A–D | Slack + SMS + email covers it. A dashboard is Phase F. |
 | LLM-generated SQL or dynamic queries | Injection and non-determinism on a money path. |
 

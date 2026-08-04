@@ -1,7 +1,7 @@
 # Grace — platform tooling. Everything runs through the project venv.
 PY := .venv/bin/python
 
-.PHONY: install check lint typecheck test \
+.PHONY: install check lint typecheck test docs docs-check docs-lint \
         vapi-generate vapi-prompt vapi-build vapi-validate vapi-diff vapi-apply vapi-mock \
         n8n-lint n8n-diff n8n-apply
 
@@ -9,7 +9,7 @@ install:
 	uv venv && uv pip install -e ".[dev]"
 
 ## The full T1 gate, exactly as CI runs it.
-check: typecheck lint test vapi-build-check vapi-validate n8n-lint
+check: typecheck lint test vapi-build-check vapi-validate n8n-lint docs-check docs-lint
 
 typecheck:
 	$(PY) -m mypy src tests
@@ -45,6 +45,20 @@ vapi-apply:
 
 vapi-mock:
 	$(PY) -m grace_platform.vapi.mock_server.server
+
+## ── documentation ────────────────────────────────────────────────────────────
+## Per-tool and per-workflow reference, generated from the code that defines them,
+## so it cannot drift. Hand-written planning docs are checked by docs-lint instead.
+docs:
+	$(PY) -m grace_platform.docs.gen_tools
+	$(PY) -m grace_platform.docs.gen_workflows
+
+docs-check:
+	$(PY) -m grace_platform.docs.gen_tools --check
+	$(PY) -m grace_platform.docs.gen_workflows --check
+
+docs-lint:
+	$(PY) -m grace_platform.docs.lint_docs
 
 ## ── n8n ──────────────────────────────────────────────────────────────────────
 n8n-lint:
