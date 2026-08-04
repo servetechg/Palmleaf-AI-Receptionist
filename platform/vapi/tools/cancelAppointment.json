@@ -8,7 +8,7 @@
       "properties": {
         "bookingRef": {
           "description": "Booking reference exactly as it was given to you, e.g. bk-3QR9.",
-          "pattern": "^bk-[0-9A-HJKMNP-TV-Z]{4,8}$",
+          "pattern": "^[Bb][Kk]-[0-9A-Za-z]{4,8}$",
           "type": "string"
         },
         "feeAcknowledged": {

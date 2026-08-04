@@ -7,20 +7,22 @@
 .env.*
 !.env.example
 
-# Vapi / n8n platform local state
-platform/vapi/.lock.local.json
-platform/n8n/.lock.local.json
-
-# Node
-node_modules/
-dist/
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
 build/
-*.tsbuildinfo
-.pnpm-store/
+dist/
 
-# Test / coverage
-coverage/
-.vitest/
+# Cached Vapi OpenAPI spec — refetched by validate --refresh
+platform/vapi/.vapi-openapi.json
+
+# Generated from .lock.json + VAPI_PUBLIC_KEY at serve time
+platform/vapi/web-harness/harness-config.js
 
 # Editor / OS
 .DS_Store
@@ -29,10 +31,5 @@ coverage/
 .vscode/*
 !.vscode/extensions.json
 
-# Logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-
-# Claude Code session state (transcripts, subagent logs) — not project source
+# Claude Code session state — not project source
 .claude/

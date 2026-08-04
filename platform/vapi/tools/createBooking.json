@@ -13,6 +13,7 @@
           "type": "string"
         },
         "lastName": {
+          "default": "",
           "maxLength": 60,
           "type": "string"
         },
@@ -21,13 +22,14 @@
           "type": "boolean"
         },
         "notes": {
+          "default": "",
           "description": "Scheduling preferences only, e.g. \"prefers a quieter room\". NEVER any health, medical, or diagnostic detail.",
           "maxLength": 280,
           "type": "string"
         },
         "slotId": {
           "description": "Slot id exactly as checkAvailability returned it, e.g. hold-7K2. Never invent one.",
-          "pattern": "^hold-[0-9A-HJKMNP-TV-Z]{3,6}$",
+          "pattern": "^[Hh][Oo][Ll][Dd]-[0-9A-Za-z]{3,6}$",
           "type": "string"
         }
       },

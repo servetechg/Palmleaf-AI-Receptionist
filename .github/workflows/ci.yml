@@ -18,21 +18,22 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: astral-sh/setup-uv@v4
         with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          enable-cache: true
+      - run: uv venv
+      - run: uv pip install -e ".[dev]"
 
       - name: Typecheck
-        run: pnpm run typecheck
+        run: .venv/bin/python -m mypy src tests
 
       - name: Lint
-        run: pnpm run lint
+        run: |
+          .venv/bin/python -m ruff check src tests
+          .venv/bin/python -m ruff format --check src tests
 
       - name: Unit tests
-        run: pnpm run test
+        run: .venv/bin/python -m pytest
 
       # Invariant I7 — the recording and AI disclosures. Both halves matter: the greeting
       # file must carry them, AND grace.json must inject rather than inline it, or an edit
@@ -49,28 +50,27 @@ jobs:
       # Generated artefacts must match what is committed, or the schema published to Vapi
       # and the schema our handlers validate against have silently diverged.
       - name: Generated tool JSON is current
-        run: pnpm platform:vapi:generate --check
+        run: .venv/bin/python -m grace_platform.vapi.generate_tools --check
 
       - name: system.md is current
-        run: pnpm platform:vapi:prompt --check
+        run: .venv/bin/python -m grace_platform.vapi.build_prompt --check
 
       # --refresh so this validates against the CURRENT Vapi API, not a cached copy.
       # If Vapi deprecates a field we use, this is where we find out.
       - name: Validate against the live Vapi schema
-        run: pnpm platform:vapi:validate --refresh
+        run: .venv/bin/python -m grace_platform.vapi.validate --refresh
 
       - name: n8n workflow lint
-        run: pnpm platform:n8n:lint
+        run: .venv/bin/python -m grace_platform.n8n.lint
 
       - name: No secrets committed
         run: |
           if git grep -nEI 'sk_live_|whsec_[A-Za-z0-9]{10,}|xoxb-[A-Za-z0-9-]{10,}|AC[0-9a-f]{32}' \
-               -- ':!*.md' ':!pnpm-lock.yaml'; then
+               -- ':!*.md' ':!*.lock'; then
             echo "::error::possible secret committed"; exit 1
           fi
 
   # Drift — is the deployed config still what git says it is? Catches a dashboard edit.
-  # Scheduled hourly is what actually catches drift; on PRs it is advisory.
   drift:
     name: Config drift
     runs-on: ubuntu-latest
@@ -79,15 +79,11 @@ jobs:
     needs: static
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: astral-sh/setup-uv@v4
+      - run: uv venv && uv pip install -e ".[dev]"
       - name: Vapi drift
         env:
           VAPI_API_KEY: ${{ secrets.VAPI_API_KEY_DEV }}
           GRACE_TOOLS_URL: ${{ vars.GRACE_TOOLS_URL_DEV }}
           GRACE_EVENTS_URL: ${{ vars.GRACE_EVENTS_URL_DEV }}
-        run: pnpm platform:vapi:deploy --env dev --diff
+        run: .venv/bin/python -m grace_platform.vapi.deploy --env dev --diff

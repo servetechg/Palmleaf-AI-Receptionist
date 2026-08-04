@@ -136,7 +136,11 @@ under which the decision should be revisited. An ADR without exit criteria is do
 
 ---
 
-### ADR-0001 — TypeScript monorepo as the single source of truth
+### ADR-0001 — ~~TypeScript~~ monorepo as the single source of truth
+
+> ⚠️ **The language choice here is SUPERSEDED by ADR-0014 (Python).** Everything else in
+> this ADR — one monorepo, config-as-code, CI as the only deployer, one schema source
+> spanning tool definition to handler — stands unchanged and is what ADR-0014 preserves.
 
 **Decision.** One pnpm+Turborepo monorepo, TypeScript everywhere (Node 22 LTS, ESM). Vapi assistant
 definitions and n8n workflow definitions live in this repo as version-controlled JSON and are deployed
@@ -409,6 +413,62 @@ payment authority (§11 §18).
 
 **Exit criteria.** Move to true two-instance environments when **either** the account reaches a tier with
 environments/source-control, **or** a second client shares the instance. Whichever comes first.
+
+---
+
+### ADR-0014 — Python, not TypeScript. Supersedes ADR-0001.
+
+**Status.** Accepted 2026-08-03, replacing ADR-0001's language choice. The monorepo,
+config-as-code and CI-only-deploy parts of ADR-0001 stand unchanged.
+
+**Context.** ADR-0001 chose TypeScript and dismissed Python in a single line — *"better ML
+ecosystem, irrelevant here — no model training"* — which is not an argument against Python
+for an API service. Its own exit criteria named the condition that has now been met: *"the
+team composition changes to Python-primary."*
+
+The decision was never put to the client; it was inherited and built upon.
+
+**Decision.** Python 3.12+, Pydantic v2, httpx, pytest, ruff, mypy strict. `uv` for
+environments. The browser web-call harness stays in JavaScript because it runs in a
+browser; n8n Code nodes stay JavaScript because n8n runs them.
+
+**Why the TypeScript case was weaker than it looked.** The strongest argument was the
+generate-everything-from-one-schema pipeline — tool definitions, prompt table and runtime
+validation all derived from one source, so they cannot drift. **Pydantic does this
+identically** via `model_json_schema()`. That is parity, not an advantage. The remaining
+arguments (browser SDK, n8n Code nodes) cover ~60 lines and are unaffected by the language
+of everything else.
+
+**What actually decided it.** What the team can maintain. A system the people who own it
+can debug at 2am beats a marginally more elegant one they cannot. Every other consideration
+here was close enough to be noise.
+
+**Cost, and why now.** 3,232 lines ported in one session; 14 of 20 plan documents mention
+Node-stack specifics. After Core API is built the same switch is 15,000+ lines against
+working code. This was the cheapest moment it would ever be, by a wide margin.
+
+**Verified at the port boundary.** The Python implementation was pointed at the *same* live
+Vapi assistant the TypeScript one had deployed:
+
+- generated tool JSON differs only where deliberately improved (portable regex, wording)
+- `deploy --apply` then `--diff` reports **zero drift** on the same assistant id
+- the n8n linter catches the same five injected defects
+- the mock server returns byte-identical spoken output
+- all 14 speech tests pass unchanged
+
+**Three defects the port surfaced**, none of which existed in the TypeScript version:
+
+1. Pydantic uses the **class docstring** as a schema `description`, so internal
+   implementation notes were being sent to the model as instructions. The generator now
+   strips them, and the validator fails if any reappear.
+2. Pydantic hoists enums into `$defs` and references them; Vapi has no `$ref` resolver.
+   The generator inlines them.
+3. Python distinguishes `1` from `1.0`; JSON does not. Vapi echoes `1`, our config said
+   `1.0`, and the drift check went permanently red on the first run. Integral floats are
+   now collapsed before comparison.
+
+**Exit criteria.** Revisit if the team becomes JavaScript-primary, or if a required Vapi or
+n8n capability ships as a JS-only SDK with no REST equivalent.
 
 ---
 

@@ -19,7 +19,8 @@
           "type": "string"
         },
         "providerPreference": {
-          "description": "Provider name if the caller asked for someone specific. Omit if they did not.",
+          "default": "",
+          "description": "Provider name if the caller asked for someone specific. Leave empty if not.",
           "type": "string"
         },
         "serviceCode": {

@@ -7,6 +7,7 @@
       "additionalProperties": false,
       "properties": {
         "body": {
+          "default": "",
           "description": "Any extra detail the caller gave. Again: no health or medical detail, ever.",
           "maxLength": 600,
           "type": "string"
