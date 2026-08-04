@@ -62,7 +62,8 @@
           "id": "__CRED__:vapi",
           "name": "__CRED__:vapi"
         }
-      }
+      },
+      "alwaysOutputData": true
     },
     {
       "id": "sample",

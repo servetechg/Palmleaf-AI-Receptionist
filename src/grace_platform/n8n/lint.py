@@ -129,6 +129,21 @@ def lint_file(path: Path) -> None:
                     f"deploys green and throws at runtime)",
                 )
 
+        # 16. A fetch feeding a scheduled report must set alwaysOutputData. Without it n8n
+        #     skips every downstream node when the API returns an empty list, so a quiet day
+        #     records nothing at all instead of recording that it was quiet.
+        if (
+            ntype == "n8n-nodes-base.httpRequest"
+            and any(n["type"] == "n8n-nodes-base.scheduleTrigger" for n in nodes)
+            and not node.get("alwaysOutputData")
+        ):
+            bad(
+                file,
+                16,
+                f'HTTP node "{node["name"]}" feeds a scheduled report but lacks '
+                f"alwaysOutputData — an empty API response would skip the whole report",
+            )
+
         if ntype == "n8n-nodes-base.httpRequest" and not isinstance(
             params.get("options", {}).get("timeout"), int
         ):
@@ -191,7 +206,7 @@ def main() -> int:
             print(f"    {p}", file=sys.stderr)
         print(file=sys.stderr)
         return 1
-    print(f"✓ {len(files)} workflow(s) pass all 15 lint rules")
+    print(f"✓ {len(files)} workflow(s) pass all 16 lint rules")
     return 0
 
 
