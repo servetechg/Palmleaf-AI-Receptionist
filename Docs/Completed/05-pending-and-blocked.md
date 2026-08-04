@@ -1,6 +1,6 @@
 # 06 — Pending and Blocked
 
-**Last updated:** 3 August 2026
+**Last updated:** 4 August 2026
 
 > Everything the other files in this folder do **not** claim. If a capability is not listed as
 > verified in `00-STATUS.md`, it is here or it does not exist yet.
@@ -62,7 +62,7 @@ actually works in practice rather than only on paper.
 | Item | Notes |
 |---|---|
 | **Vapi Simulations** (T2 chat, T3 voice) | `simulations/` is empty. The three-tier strategy is designed (doc 08 §9) but no scenario is authored. T1 is the only tier running. |
-| **`platform/n8n/export.ts`** | Stub. AC-09.2 unverified — we cannot yet round-trip a dashboard edit back into git. |
+| **`src/grace_platform/n8n/export.py`** | Stub. AC-09.2 unverified — we cannot yet round-trip a dashboard edit back into git. |
 | **6 n8n workflows** | WF-07 reconciliation report, WF-11 hourly digest, WF-15 daily digest, WF-16 QA sampler, WF-17 Vagaro fan-out. |
 | **WF-14 staff actions** | Deferred with Slack — it is entirely Slack interactivity + the `/grace-kill` slash command. |
 | **Hourly drift cron** | Designed (doc 08 §8.1, ADR-0013). CI has a push-triggered drift job but no schedule — and the hourly job is what actually catches a dashboard edit. |
@@ -76,7 +76,7 @@ actually works in practice rather than only on paper.
 |---|---|
 | The whole n8n runtime path | WF-12 has never received a signed request. AC-09.4, 09.5, 09.7, 09.10 all unverified. |
 | `/internal/notify/{staff,ops,sms}` | The workflows call these. **They do not exist.** Every notification currently 404s. |
-| WF-18 deploy idempotency | Re-reports drift on every `--apply` — n8n materialises node defaults and the comparison is not normalised. Converges, but does redundant writes. |
+| ~~WF-18 deploy idempotency~~ | **RESOLVED 4 Aug.** The cause was not un-normalised defaults as originally recorded — `render()` wrote the credential id into the `name` field, which n8n rewrites on save. All three workflows now report zero drift. |
 | Transfer path | Cannot be tested on web calls (A-14). Needs a phone number. |
 | Prod environment | Nothing deployed to `env:prod`; the tag does not exist. |
 
@@ -114,9 +114,9 @@ Also: `voiceId: "sarah"` is a placeholder, not a client-approved voice.
 
 | Issue | Severity | Location |
 |---|---|---|
-| WF-18 drift on every apply | low — redundant writes only | `platform/n8n/deploy.ts` |
-| `GRACE_MOCK_TIMEOUT` sleeps 60s rather than modelling the deadline middleware | low | `mock-server/server.ts` |
-| No tests for `fixtures.ts` | medium — only `speech.ts` is covered | — |
+| ~~WF-18 drift on every apply~~ | **fixed 4 Aug** — see above | `src/grace_platform/n8n/deploy.py` |
+| `GRACE_MOCK_TIMEOUT` sleeps 60s rather than modelling the deadline middleware | low | `mock_server/server.py` |
+| No tests for `fixtures.py` | medium — only `speech.py` is covered | — |
 | Doc 06 §6.1's false retry claim flagged but not edited in place | low | `Docs/plans/06` |
 | Doc 12 has no "n8n is down" alert | **medium** — if n8n dies, every P1 escalation disappears silently | `Docs/plans/12` |
 | Doc 02 §50 still says `/internal/*` is mTLS-gated; it is bearer only | low | `Docs/plans/02` |

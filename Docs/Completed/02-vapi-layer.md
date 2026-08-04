@@ -144,7 +144,7 @@ createBooking: parameter "properties.lastName" renders as `anyOf`, which Vapi re
 
 ## Not done in this area
 
-- The assistant points at `placeholder.invalid` — see `06-pending-and-blocked.md`
+- The assistant points at `placeholder.invalid` — see `05-pending-and-blocked.md`
 - No HMAC webhook credential created (needs the dashboard; A-13 undischarged)
 - `voiceId: "sarah"` is a placeholder, not client-approved (GATE-05)
 - Vapi concurrency still at the default 10; the target is 25/50 (doc 18 §1.3)

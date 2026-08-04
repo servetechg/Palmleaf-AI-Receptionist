@@ -87,5 +87,5 @@ The point of the log is that it can be trusted.
 2. Discard everything in the exclusion table.
 3. Pick the 6 with the largest effect on what the system can do.
 4. For each, state the mechanism and one concrete number or symptom.
-5. Write ⚠️ from [06-pending-and-blocked.md](06-pending-and-blocked.md).
+5. Write ⚠️ from [05-pending-and-blocked.md](05-pending-and-blocked.md).
 6. Refresh **Last updated** in [00-STATUS.md](00-STATUS.md); commit as `docs: daily log <date>`.

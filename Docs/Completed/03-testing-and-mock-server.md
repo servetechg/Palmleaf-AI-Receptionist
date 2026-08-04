@@ -120,7 +120,7 @@ which is reportedly unsupported on web calls (A-14).
 ## Not done in this area
 
 - **The harness has never been run against a live call** — needs a tunnel. This is the single
-  biggest untested gap; see `06-pending-and-blocked.md`.
+  biggest untested gap; see `05-pending-and-blocked.md`.
 - No tests for `fixtures.ts` itself, only for `speech.ts`
 - No contract test asserting mock and Core API agree (Core API does not exist)
 - `GRACE_MOCK_TIMEOUT` sleeps 60s rather than modelling the real deadline middleware

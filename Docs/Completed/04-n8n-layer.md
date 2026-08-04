@@ -28,7 +28,7 @@ This is better than the original design, not a downgrade:
   channel behind the same endpoint.
 
 The cost: those three endpoints do not exist yet, so the workflows are structurally live but
-have nothing to call. Recorded in `06-pending-and-blocked.md`.
+have nothing to call. Recorded in `05-pending-and-blocked.md`.
 
 ---
 

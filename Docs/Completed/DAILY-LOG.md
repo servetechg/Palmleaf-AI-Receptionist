@@ -5,6 +5,37 @@ Format rules: [DAILY-LOG-GUIDELINES.md](DAILY-LOG-GUIDELINES.md). Full detail: n
 
 ---
 
+## 4 August 2026
+
+- **Moved the entire codebase from TypeScript to Python** — about 3,200 lines. The original language
+  choice was made before it was ever put to the client, and the reasoning behind it was thin. Doing
+  this now cost one session; after the next phase it would have been roughly five times the work.
+
+- **Proved the new code does exactly what the old code did**, rather than assuming. The Python
+  version was pointed at the *same* live assistant and the *same* live workflows, and reports no
+  differences on either. The tests, the safety checks and the practice system all behave identically.
+
+- **Found a bug that was silently present the whole time.** Our deploy was writing an internal ID
+  into a field n8n uses for the display name. n8n quietly corrected it every time, so every check
+  reported a change that could never be resolved. All three workflows now match cleanly.
+
+- **Closed a privacy hole created by the new language.** Python's schema tools use developer notes
+  as public descriptions, which meant internal implementation comments were being sent to Grace as
+  part of her instructions. Stripped, with an automatic check so it cannot come back.
+
+- **Rewrote the project README as a complete map** — every file and folder, what each of Grace's 15
+  tools does and when she uses it, where to find each piece in the Vapi and n8n dashboards with live
+  IDs, and how a change travels from an edit to something running.
+
+- **Consolidated the progress records** so each entry is a real feature rather than a fragment, and
+  refreshed them for the new language.
+
+⚠️ **Unchanged:** Grace still has not taken a live call and no workflow has actually run. She points
+at a placeholder address. Everything else is verified; that one step is not.
+  Details in [05-pending-and-blocked.md](05-pending-and-blocked.md).
+
+---
+
 ## 3 August 2026
 
 - **Grace and all 15 of her tools are live in Vapi, deployed straight from our code.** Her tools
@@ -40,4 +71,7 @@ Format rules: [DAILY-LOG-GUIDELINES.md](DAILY-LOG-GUIDELINES.md). Full detail: n
 ⚠️ **Not proven yet:** Grace has not taken a live call and no workflow has actually run. She is
 pointed at a placeholder address, so a real call would fail. Two smaller gaps: we cannot yet pull
 changes back out of n8n into our code, and one workflow reports a false change every time it
-deploys. Details in [06-pending-and-blocked.md](06-pending-and-blocked.md).
+deploys. Details in [05-pending-and-blocked.md](05-pending-and-blocked.md).
+
+> *Corrected 4 Aug: the "false change every time" was not a cosmetic comparison issue as written
+> here — it was a real bug affecting all three workflows, now fixed. See today's entry.*

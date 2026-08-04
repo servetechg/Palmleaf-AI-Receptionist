@@ -1,6 +1,6 @@
 # Completed Work — Status Dashboard
 
-**Last updated:** 3 August 2026
+**Last updated:** 4 August 2026
 **Scope of this phase:** Vapi conversation layer + n8n orchestration layer only.
 Vagaro, RingCentral, Stripe, Google and Twilio are blocked; Core API is out of scope.
 
@@ -18,15 +18,15 @@ Vagaro, RingCentral, Stripe, Google and Twilio are blocked; Core API is out of s
 
 | Area | Status | Detail |
 |---|---|---|
-| Documentation corrections | ✅ Done | [01](01-documentation-corrections.md) |
-| `packages/contracts` (13 tool schemas) | ✅ Done | [02](02-contracts-and-tooling.md) |
-| Repo, tooling, CI | ✅ Done | [02](02-contracts-and-tooling.md) |
-| Vapi layer — deployed and live | ✅ Done | [03](03-vapi-layer.md) |
-| Mock tool server + web harness | ✅ Done | [04](04-mock-server-and-testing.md) |
-| n8n layer — 3 workflows live | ✅ Done | [05](05-n8n-layer.md) |
-| **Live web call with Grace** | ⏳ Blocked | needs a tunnel — [06](06-pending-and-blocked.md) |
-| Vapi Simulations (T2/T3) | ❌ Not started | [06](06-pending-and-blocked.md) |
-| Remaining 6 n8n workflows | ❌ Not started | [06](06-pending-and-blocked.md) |
+| Documentation corrections | ✅ Done | [01](01-foundation.md) |
+| `packages/contracts` (13 tool schemas) | ✅ Done | [02](01-foundation.md) |
+| Repo, tooling, CI | ✅ Done | [02](01-foundation.md) |
+| Vapi layer — deployed and live | ✅ Done | [03](02-vapi-layer.md) |
+| Mock tool server + web harness | ✅ Done | [04](03-testing-and-mock-server.md) |
+| n8n layer — 3 workflows live | ✅ Done | [05](04-n8n-layer.md) |
+| **Live web call with Grace** | ⏳ Blocked | needs a tunnel — [06](05-pending-and-blocked.md) |
+| Vapi Simulations (T2/T3) | ❌ Not started | [06](05-pending-and-blocked.md) |
+| Remaining 6 n8n workflows | ❌ Not started | [06](05-pending-and-blocked.md) |
 | Core API | ❌ Out of scope | resumes from doc 15 |
 
 ---
@@ -44,7 +44,7 @@ Vagaro, RingCentral, Stripe, Google and Twilio are blocked; Core API is out of s
 | Structured output `grace-call-outcome` | `3e25e0f5-…` | live |
 
 ⚠️ The assistant's tool URLs currently point at `placeholder.invalid`. **Tools will fail on
-a real call until it is redeployed with a tunnel URL** — see [06](06-pending-and-blocked.md).
+a real call until it is redeployed with a tunnel URL** — see [06](05-pending-and-blocked.md).
 
 **n8n** (`palmleafmassage.app.n8n.cloud`)
 
@@ -62,7 +62,7 @@ correctly ignored by the deploy filter.
 
 ## Verification evidence
 
-Only claims with evidence are listed. Everything else is in [06](06-pending-and-blocked.md).
+Only claims with evidence are listed. Everything else is in [06](05-pending-and-blocked.md).
 
 | Acceptance criterion | Evidence |
 |---|---|
@@ -86,3 +86,5 @@ Only claims with evidence are listed. Everything else is in [06](06-pending-and-
 | `34e3f4d` | Doc corrections against live APIs + workspace skeleton |
 | `e8db9cd` | Contracts, generator, validator, deploy — Grace live on dev |
 | `298c9fc` | Mock server, web harness, n8n workflows, CI gate |
+| `a335d9a` | Slack removed; n8n workflows deployed; `Docs/Completed/` created |
+| `cf71434` | **Ported TypeScript → Python** (ADR-0014); n8n credential-name bug fixed |
