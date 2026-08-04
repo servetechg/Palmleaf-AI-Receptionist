@@ -1,0 +1,336 @@
+{
+  "name": "WF-20 Daily Call Digest",
+  "nodes": [
+    {
+      "id": "cron",
+      "name": "Every morning",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 7,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch yesterday's calls",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.vapi.ai/call",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "1000"
+            },
+            {
+              "name": "createdAtGe",
+              "value": "={{ $now.minus(1, 'day').startOf('day').toISO() }}"
+            },
+            {
+              "name": "createdAtLt",
+              "value": "={{ $now.startOf('day').toISO() }}"
+            }
+          ]
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CRED__:vapi",
+          "name": "__CRED__:vapi"
+        }
+      }
+    },
+    {
+      "id": "analyse",
+      "name": "Summarise the day",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Summarise yesterday's calls into one row. Reads Vapi's call records directly \u2014\n// no Core API involved, so this works today.\nconst calls = $input.all().map(i => i.json).flat().filter(c => c && c.id);\n\nconst outcome = c => (c.analysis && c.analysis.structuredData) || {};\nconst secs = c => c.startedAt && c.endedAt\n  ? (new Date(c.endedAt) - new Date(c.startedAt)) / 1000 : 0;\n\nconst total = calls.length;\nconst booked = calls.filter(c => outcome(c).booked === true).length;\nconst escalated = calls.filter(c => outcome(c).escalated === true).length;\nconst medicalHolds = calls.filter(c => outcome(c).medicalHold === true).length;\nconst durations = calls.map(secs).filter(s => s > 0);\nconst avg = durations.length\n  ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;\n\n// Containment = handled without a human. The headline number for an AI receptionist.\nconst containment = total ? Math.round(((total - escalated) / total) * 100) : 0;\n\nconst d = new Date(); d.setDate(d.getDate() - 1);\n\nreturn [{ json: {\n  day: d.toISOString().slice(0, 10),\n  total_calls: total,\n  booked,\n  escalated,\n  medical_holds: medicalHolds,\n  avg_duration_seconds: avg,\n  containment_pct: containment,\n} }];"
+      }
+    },
+    {
+      "id": "store",
+      "name": "Save digest",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "call_metrics"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "day": "={{ $json.day }}",
+            "total_calls": "={{ $json.total_calls }}",
+            "booked": "={{ $json.booked }}",
+            "escalated": "={{ $json.escalated }}",
+            "medical_holds": "={{ $json.medical_holds }}",
+            "avg_duration_seconds": "={{ $json.avg_duration_seconds }}",
+            "containment_pct": "={{ $json.containment_pct }}"
+          },
+          "schema": [
+            {
+              "id": "day",
+              "displayName": "day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "total_calls",
+              "displayName": "total_calls",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "booked",
+              "displayName": "booked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "escalated",
+              "displayName": "escalated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "medical_holds",
+              "displayName": "medical_holds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "avg_duration_seconds",
+              "displayName": "avg_duration_seconds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "containment_pct",
+              "displayName": "containment_pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "pg",
+      "name": "Archive to Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        880,
+        0
+      ],
+      "disabled": true,
+      "parameters": {
+        "operation": "insert",
+        "schema": {
+          "__rl": true,
+          "mode": "name",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "name",
+          "value": "call_metrics"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "day": "={{ $json.day }}",
+            "total_calls": "={{ $json.total_calls }}",
+            "booked": "={{ $json.booked }}",
+            "escalated": "={{ $json.escalated }}",
+            "medical_holds": "={{ $json.medical_holds }}",
+            "avg_duration_seconds": "={{ $json.avg_duration_seconds }}",
+            "containment_pct": "={{ $json.containment_pct }}"
+          },
+          "schema": [
+            {
+              "id": "day",
+              "displayName": "day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "total_calls",
+              "displayName": "total_calls",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "booked",
+              "displayName": "booked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "escalated",
+              "displayName": "escalated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "medical_holds",
+              "displayName": "medical_holds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "avg_duration_seconds",
+              "displayName": "avg_duration_seconds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "containment_pct",
+              "displayName": "containment_pct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__CRED__:postgres",
+          "name": "__CRED__:postgres"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every morning": {
+      "main": [
+        [
+          {
+            "node": "Fetch yesterday's calls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch yesterday's calls": {
+      "main": [
+        [
+          {
+            "node": "Summarise the day",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarise the day": {
+      "main": [
+        [
+          {
+            "node": "Save digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save digest": {
+      "main": [
+        [
+          {
+            "node": "Archive to Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "__WF__:wf-00",
+    "timezone": "America/Chicago"
+  }
+}

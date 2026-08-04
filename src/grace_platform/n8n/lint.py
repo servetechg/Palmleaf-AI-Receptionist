@@ -94,6 +94,18 @@ def lint_file(path: Path) -> None:
         bad(file, 11, f'settings.errorWorkflow "{ew}" must be a __WF__:<alias> placeholder')
 
     nodes: list[dict[str, Any]] = wf.get("nodes", [])
+
+    # 15. a scheduled workflow must pin its timezone, or "07:30" means whatever the
+    #     instance default happens to be. Set on settings, not on the trigger node.
+    if any(n["type"] == "n8n-nodes-base.scheduleTrigger" for n in nodes):
+        tz = _str(settings.get("timezone"))
+        if tz != "America/Chicago":
+            bad(
+                file,
+                15,
+                f'scheduled workflow must set settings.timezone America/Chicago, got "{tz}"',
+            )
+
     has_wait = any(n["type"] == "n8n-nodes-base.wait" for n in nodes)
     if has_wait and "executionTimeout" in settings:
         bad(file, 12, "has a Wait node and settings.executionTimeout, which would kill it mid-wait")
@@ -104,6 +116,10 @@ def lint_file(path: Path) -> None:
 
         for cred_type, cred in (node.get("credentials") or {}).items():
             cred_id = cred.get("id", "")
+            # A disabled node is allowed an alias with no credential behind it yet — that is
+            # how the Postgres path ships present-but-off until a hosted database exists.
+            if node.get("disabled"):
+                continue
             if not CRED_PLACEHOLDER.match(str(cred_id)):
                 bad(
                     file,
@@ -131,14 +147,9 @@ def lint_file(path: Path) -> None:
                     f'Wait node "{node["name"]}" is {seconds:g}s; under 65s it is lost on restart',
                 )
 
-        if ntype == "n8n-nodes-base.scheduleTrigger":
-            tz = _str(params.get("timezone"))
-            if tz != "America/Chicago":
-                bad(
-                    file,
-                    15,
-                    f'schedule node "{node["name"]}" must set timezone America/Chicago, got "{tz}"',
-                )
+        # Rule 15 lives above, per workflow: the scheduleTrigger node has no `timezone`
+        # parameter of its own — verified against the v1.3 node definition — so pinning it
+        # on the node would silently do nothing. It is a workflow-level setting.
 
         if ntype in WEBHOOK_TYPES and ntype == "n8n-nodes-base.webhook":
             if _str(params.get("httpMethod")) != "POST":

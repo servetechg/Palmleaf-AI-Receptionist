@@ -1,0 +1,375 @@
+{
+  "name": "WF-21 Weekly QA Sampler",
+  "nodes": [
+    {
+      "id": "cron",
+      "name": "Monday morning",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch last week's calls",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.vapi.ai/call",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "1000"
+            },
+            {
+              "name": "createdAtGe",
+              "value": "={{ $now.minus(7, 'days').startOf('day').toISO() }}"
+            }
+          ]
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CRED__:vapi",
+          "name": "__CRED__:vapi"
+        }
+      }
+    },
+    {
+      "id": "sample",
+      "name": "Pick 20 at random",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Pick 20 calls at random for a human to listen to. Random, not \"worst first\" \u2014\n// sampling the ordinary calls is what catches slow drift in how Grace behaves.\nconst calls = $input.all().map(i => i.json).flat().filter(c => c && c.id);\n\nfor (let i = calls.length - 1; i > 0; i--) {\n  const j = Math.floor(Math.random() * (i + 1));\n  [calls[i], calls[j]] = [calls[j], calls[i]];\n}\n\nconst week = new Date().toISOString().slice(0, 10);\nreturn calls.slice(0, 20).map(c => {\n  const o = (c.analysis && c.analysis.structuredData) || {};\n  return { json: {\n    sampled_week: week,\n    call_id: c.id,\n    started_at: c.startedAt || '',\n    duration_seconds: c.startedAt && c.endedAt\n      ? Math.round((new Date(c.endedAt) - new Date(c.startedAt)) / 1000) : 0,\n    intent: o.intent || 'unknown',\n    booked: String(o.booked === true),\n    escalated: String(o.escalated === true),\n    recording_url: (c.artifact && c.artifact.recordingUrl) || '',\n    reviewed: 'no',\n  } };\n});"
+      }
+    },
+    {
+      "id": "store",
+      "name": "Save sample",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "call_samples"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sampled_week": "={{ $json.sampled_week }}",
+            "call_id": "={{ $json.call_id }}",
+            "started_at": "={{ $json.started_at }}",
+            "duration_seconds": "={{ $json.duration_seconds }}",
+            "intent": "={{ $json.intent }}",
+            "booked": "={{ $json.booked }}",
+            "escalated": "={{ $json.escalated }}",
+            "recording_url": "={{ $json.recording_url }}",
+            "reviewed": "={{ $json.reviewed }}"
+          },
+          "schema": [
+            {
+              "id": "sampled_week",
+              "displayName": "sampled_week",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "call_id",
+              "displayName": "call_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "started_at",
+              "displayName": "started_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "duration_seconds",
+              "displayName": "duration_seconds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "booked",
+              "displayName": "booked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "escalated",
+              "displayName": "escalated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recording_url",
+              "displayName": "recording_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reviewed",
+              "displayName": "reviewed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "pg",
+      "name": "Archive to Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        880,
+        0
+      ],
+      "disabled": true,
+      "parameters": {
+        "operation": "insert",
+        "schema": {
+          "__rl": true,
+          "mode": "name",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "name",
+          "value": "call_samples"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sampled_week": "={{ $json.sampled_week }}",
+            "call_id": "={{ $json.call_id }}",
+            "started_at": "={{ $json.started_at }}",
+            "duration_seconds": "={{ $json.duration_seconds }}",
+            "intent": "={{ $json.intent }}",
+            "booked": "={{ $json.booked }}",
+            "escalated": "={{ $json.escalated }}",
+            "recording_url": "={{ $json.recording_url }}",
+            "reviewed": "={{ $json.reviewed }}"
+          },
+          "schema": [
+            {
+              "id": "sampled_week",
+              "displayName": "sampled_week",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "call_id",
+              "displayName": "call_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "started_at",
+              "displayName": "started_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "duration_seconds",
+              "displayName": "duration_seconds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "booked",
+              "displayName": "booked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "escalated",
+              "displayName": "escalated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recording_url",
+              "displayName": "recording_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reviewed",
+              "displayName": "reviewed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__CRED__:postgres",
+          "name": "__CRED__:postgres"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Monday morning": {
+      "main": [
+        [
+          {
+            "node": "Fetch last week's calls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch last week's calls": {
+      "main": [
+        [
+          {
+            "node": "Pick 20 at random",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick 20 at random": {
+      "main": [
+        [
+          {
+            "node": "Save sample",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save sample": {
+      "main": [
+        [
+          {
+            "node": "Archive to Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "__WF__:wf-00",
+    "timezone": "America/Chicago"
+  }
+}

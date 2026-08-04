@@ -12,6 +12,9 @@ reporting. It is never on the call path: nothing a caller waits for touches n8n.
 | [WF-00](WF-00.md) | **Active.** Fires whenever any other workflow errors. |
 | [WF-12](WF-12.md) | **Published but dormant.** Nothing triggers it yet — the signed webhook that would comes from Core API, which is not built. Correct scaffolding, currently inert. |
 | [WF-18](WF-18.md) | **Published but dormant.** Called only by WF-12, which is itself dormant. It also stops short of placing a voice call — that needs Phase F (A-20). |
+| [WF-20](WF-20.md) | **Active.** Runs daily against Vapi's call API. Works today, no Core API needed. |
+| [WF-21](WF-21.md) | **Active.** Runs weekly against Vapi's call API. Works today. |
+| [WF-22](WF-22.md) | **Active.** Runs hourly against Vapi's call API. Works today. |
 
 Instance: `palmleafmassage.app.n8n.cloud`. One account serves both environments, separated by
 the `[dev]` / `[prod]` name prefix and the `env:*` tag.

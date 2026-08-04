@@ -23,6 +23,10 @@ from .lib.client import N8nClient
 DIR = Path(__file__).resolve().parents[3] / "platform" / "n8n" / "workflows"
 
 CREDENTIAL_NAMES: dict[str, dict[str, str]] = {
+    "vapi": {"dev": "PalmLeaf Vapi (dev)", "prod": "PalmLeaf Vapi (prod)"},
+    # Present so a disabled node's placeholder resolves if the credential ever appears;
+    # the node stays off until someone enables it deliberately.
+    "postgres": {"dev": "PalmLeaf Postgres (dev)", "prod": "PalmLeaf Postgres (prod)"},
     # Only one. n8n holds no third-party credentials — every notification goes through
     # Core API's /internal/notify/*, so 10DLC and opt-out enforcement cannot be bypassed
     # (doc 09 §3.4). Slack is not in scope; if adopted it becomes a Core API channel.
@@ -98,7 +102,29 @@ def render(
         # Webhook paths carry the environment so dev and prod cannot collide.
         return v.replace("{{ENV}}/", f"{env}/")
 
-    nodes = walk(wf["nodes"])
+    # Disabled nodes are the Postgres path, shipped present-but-off. Their credential does
+    # not exist yet — and n8n REJECTS a node referencing a credential id it cannot resolve
+    # even when the node is disabled ("You don't have access to the credentials in the ..."
+    # node), so the placeholder cannot simply be left in place. Strip the credentials block;
+    # everything else about the node survives, and attaching a real credential when the node
+    # is enabled is a one-field change in the n8n UI.
+    def strip_unresolved_creds(node: dict[str, Any]) -> dict[str, Any]:
+        out = dict(node)
+        creds = {
+            k: v
+            for k, v in (out.get("credentials") or {}).items()
+            if not str(v.get("id", "")).startswith("__CRED__:")
+            or CREDENTIAL_NAMES.get(str(v["id"])[len("__CRED__:") :], {}).get(env) in cred_ids
+        }
+        if creds:
+            out["credentials"] = creds
+        else:
+            out.pop("credentials", None)
+        return out
+
+    enabled = [n for n in wf["nodes"] if not n.get("disabled")]
+    disabled = [strip_unresolved_creds(n) for n in wf["nodes"] if n.get("disabled")]
+    nodes = walk(enabled) + [walk(n) for n in disabled]
     settings = walk(wf.get("settings", {}))
 
     if unresolved:
