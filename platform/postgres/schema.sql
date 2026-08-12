@@ -58,6 +58,58 @@ CREATE TABLE IF NOT EXISTS call_flags (
 );
 CREATE INDEX IF NOT EXISTS call_flags_detected_idx ON call_flags (detected_at DESC);
 
+-- Liveness. One row every 15 minutes from WF-19. `gap_minutes` is the distance from the
+-- previous beat, so a gap materially over 15 is a window the platform missed.
+CREATE TABLE IF NOT EXISTS platform_heartbeat (
+    beat_at      timestamptz PRIMARY KEY,
+    gap_minutes  integer     NOT NULL DEFAULT 0,
+    vapi_ok      boolean     NOT NULL DEFAULT true,
+    healthy      boolean     NOT NULL DEFAULT true,
+    reasons      text        NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS platform_heartbeat_unhealthy_idx
+    ON platform_heartbeat (beat_at DESC) WHERE NOT healthy;
+
+-- Nightly mirror reconciliation (WF-07). One row per run.
+CREATE TABLE IF NOT EXISTS reconciliation_reports (
+    ran_at         timestamptz PRIMARY KEY,
+    checks_total   integer     NOT NULL DEFAULT 0,
+    checks_failed  integer     NOT NULL DEFAULT 0,
+    drift_records  integer     NOT NULL DEFAULT 0,
+    summary        text        NOT NULL DEFAULT ''
+);
+
+-- Hourly staff digest (WF-11). Normal activity, as opposed to WF-22's faults.
+CREATE TABLE IF NOT EXISTS call_digests (
+    window_end   timestamptz PRIMARY KEY,
+    calls        integer NOT NULL DEFAULT 0,
+    booked       integer NOT NULL DEFAULT 0,
+    escalated    integer NOT NULL DEFAULT 0,
+    open_tasks   integer NOT NULL DEFAULT 0,
+    summary      text    NOT NULL DEFAULT ''
+);
+
+-- Vagaro change events fanned out to secondary consumers (WF-17).
+CREATE TABLE IF NOT EXISTS fanout_log (
+    id           bigserial PRIMARY KEY,
+    received_at  timestamptz NOT NULL DEFAULT now(),
+    event_type   text        NOT NULL,
+    entity_id    text        NOT NULL DEFAULT '',
+    consumers    text        NOT NULL DEFAULT '',
+    delivered    text        NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS fanout_log_received_idx ON fanout_log (received_at DESC);
+
+-- Every n8n workflow failure (WF-00). Workflow, node and message only — never the payload.
+CREATE TABLE IF NOT EXISTS workflow_errors (
+    id            bigserial PRIMARY KEY,
+    failed_at     timestamptz NOT NULL DEFAULT now(),
+    workflow      text        NOT NULL DEFAULT '',
+    node          text        NOT NULL DEFAULT '',
+    message       text        NOT NULL DEFAULT '',
+    execution_id  text        NOT NULL DEFAULT ''
+);
+
 -- NOTE ON SCOPE (I6): none of these tables holds a transcript, a caller name, a phone
 -- number, or any health detail. Reporting needs counts and outcomes, not content. The
 -- recording URL is a pointer into Vapi, governed by Vapi's retention, not copied here.

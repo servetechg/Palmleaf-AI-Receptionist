@@ -1,0 +1,102 @@
+{
+  "name": "WF-24 Vapi Call Fetch",
+  "nodes": [
+    {
+      "id": "start",
+      "name": "Called by report",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch calls",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.vapi.ai/call",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "={{ $json.limit }}"
+            },
+            {
+              "name": "createdAtGe",
+              "value": "={{ $json.sinceIso }}"
+            },
+            {
+              "name": "createdAtLt",
+              "value": "={{ $json.untilIso }}"
+            }
+          ]
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CRED__:vapi",
+          "name": "__CRED__:vapi"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "norm",
+      "name": "Normalise the calls",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Library workflow: fetch Vapi call records and extract the fields every report\n// uses, written once. Callers (WF-20/21/22) pass { sinceIso, untilIso, limit } and\n// read back ONE item holding { calls: [...] } — a single item rather than one item\n// per call, so a quiet window still flows through the caller's summarise node and\n// the zero-row guarantee survives (a missing report is ambiguous; a zero row is not).\n// Semantics preserved exactly from the three reports this replaces: booked /\n// escalated / medicalHold are strict === true checks on Vapi's structured outcome.\nconst raw = $input.all().map(i => i.json).flat().filter(c => c && c.id);\nconst calls = raw.map(c => {\n  const o = (c.analysis && c.analysis.structuredData) || {};\n  return {\n    id: c.id,\n    startedAt: c.startedAt || '',\n    durationSeconds: c.startedAt && c.endedAt\n      ? (new Date(c.endedAt) - new Date(c.startedAt)) / 1000 : 0,\n    endedReason: String(c.endedReason || ''),\n    booked: o.booked === true,\n    escalated: o.escalated === true,\n    medicalHold: o.medicalHold === true,\n    intent: o.intent || 'unknown',\n    recordingUrl: (c.artifact && c.artifact.recordingUrl) || '',\n  };\n});\nreturn [{ json: { calls } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Called by report": {
+      "main": [
+        [
+          {
+            "node": "Fetch calls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch calls": {
+      "main": [
+        [
+          {
+            "node": "Normalise the calls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "__WF__:wf-00"
+  }
+}

@@ -10,7 +10,7 @@
 
 ## What it does, and when Grace calls it
 
-Text the caller their intake form after booking. Call this once, right after a successful booking. Do not read the link aloud.
+Have the front desk text their intake form after booking. Call this once, right after a successful booking. Do not read the link aloud.
 
 ## Parameters
 

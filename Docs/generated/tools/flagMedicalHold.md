@@ -10,7 +10,7 @@
 
 ## What it does, and when Grace calls it
 
-Call this the instant a caller mentions surgery, an injury, a condition, medication, pregnancy, or any treatment — even in passing. It blocks the booking so a qualified person can follow up. Do NOT ask what the condition is, do NOT repeat it back, and do NOT record it anywhere. After calling this, escalate.
+Call this the instant a caller mentions their own surgery, condition, medication, pregnancy, or treatment — even in passing. Call this the instant a caller mentions surgery, an injury, a condition, medication, pregnancy, or any treatment — even in passing. It blocks the booking so a qualified person can follow up. Do NOT ask what the condition is, do NOT repeat it back, and do NOT record it anywhere. After calling this, escalate.
 
 ## Parameters
 

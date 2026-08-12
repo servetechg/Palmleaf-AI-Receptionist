@@ -1,0 +1,230 @@
+{
+  "name": "WF-17 Vagaro Webhook Fan-out",
+  "nodes": [
+    {
+      "id": "hook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "{{ENV}}/fanout",
+        "responseMode": "responseNode",
+        "authentication": "headerAuth",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CRED__:n8n-inbound",
+          "name": "__CRED__:n8n-inbound"
+        }
+      }
+    },
+    {
+      "id": "ack",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 200,
+        "responseBody": "={{ JSON.stringify({ ok: true }) }}"
+      }
+    },
+    {
+      "id": "norm",
+      "name": "Normalise the event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Fan a Vagaro change out to secondary consumers (client CRM, marketing).\n// Acknowledged BEFORE this runs \u2014 a slow consumer must never hold the caller's\n// webhook connection open. Never forward caller-identifying detail (I6): the event\n// type and the entity id are enough for a consumer to fetch what it is entitled to.\nconst b = $input.first().json.body || {};\nconst consumers = ['crm', 'marketing'];\nreturn [{ json: {\n  received_at: new Date().toISOString(),\n  event_type: String(b.eventType || b.type || 'unknown'),\n  entity_id: String(b.entityId || b.id || ''),\n  consumers: consumers.join(','),\n  delivered: 'pending \u2014 consumer endpoints not configured',\n} }];"
+      }
+    },
+    {
+      "id": "store",
+      "name": "Log the fan-out",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "fanout_log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "received_at": "={{ $json.received_at }}",
+            "event_type": "={{ $json.event_type }}",
+            "entity_id": "={{ $json.entity_id }}",
+            "consumers": "={{ $json.consumers }}",
+            "delivered": "={{ $json.delivered }}"
+          },
+          "schema": [
+            {
+              "id": "received_at",
+              "displayName": "received_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "entity_id",
+              "displayName": "entity_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "consumers",
+              "displayName": "consumers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "delivered",
+              "displayName": "delivered",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "crm",
+      "name": "Deliver to CRM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        -80
+      ],
+      "disabled": true,
+      "parameters": {
+        "method": "POST",
+        "url": "=__URL__:crm/events",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ type: $json.event_type, id: $json.entity_id }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "mkt",
+      "name": "Deliver to marketing",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        80
+      ],
+      "disabled": true,
+      "parameters": {
+        "method": "POST",
+        "url": "=__URL__:marketing/events",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ type: $json.event_type, id: $json.entity_id }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Respond 200",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond 200": {
+      "main": [
+        [
+          {
+            "node": "Normalise the event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalise the event": {
+      "main": [
+        [
+          {
+            "node": "Log the fan-out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log the fan-out": {
+      "main": [
+        [
+          {
+            "node": "Deliver to CRM",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Deliver to marketing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "__WF__:wf-00"
+  }
+}

@@ -1,7 +1,7 @@
 """Tools 1–4: the read path.
 
 No side effects, no idempotency key, safe to retry — these are the only tools that
-carry a ``backoffPlan`` (doc 08 §4).
+carry a ``backoffPlan`` (03-vapi-layer §4).
 """
 
 from __future__ import annotations
@@ -23,6 +23,7 @@ class BusinessTopic(StrEnum):
     SERVICES_OVERVIEW = "services_overview"
     POLICIES = "policies"
     MEMBERSHIPS = "memberships"
+    TEAM = "team"  # who the therapists are, in general terms
 
 
 class GetBusinessInfoInput(ToolInput):
@@ -70,7 +71,8 @@ class GetServicesAndPricingInput(ToolInput):
         max_length=120,
         description=(
             "What the caller asked for, in their words, e.g. '60 minute massage' or "
-            "'deep tissue'. Pass it through verbatim."
+            "'deep tissue'. Pass it through verbatim. If they asked openly what we offer, "
+            "pass 'services' and you will get the whole list."
         ),
     )
     is_member: bool = Field(

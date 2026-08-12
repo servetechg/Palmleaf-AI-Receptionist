@@ -8,7 +8,7 @@
   so the transfer path is tested by simulation, not here.
 
   Serve it (the SDK needs an http origin, not file://):
-      pnpm platform:vapi:harness
+      make vapi-harness
   It reads the public key and assistant id from harness-config.js, which is generated
   from .lock.json + VAPI_PUBLIC_KEY and is gitignored.
 -->
@@ -44,7 +44,7 @@
   </head>
   <body>
     <h1>Grace — web call harness</h1>
-    <p class="sub">Dev assistant. Tools are served by the local mock server via your tunnel.</p>
+    <p class="sub">Dev assistant. Tools are served by your local tool server via the tunnel.</p>
 
     <button id="call">Start call</button>
     <span id="status">idle</span>
@@ -69,7 +69,7 @@
       };
 
       if (!PUBLIC_KEY || !ASSISTANT_ID) {
-        write('setup', 'harness-config.js is missing values. Run: pnpm platform:vapi:harness', 'err');
+        write('setup', 'harness-config.js is missing values. Run: make vapi-harness', 'err');
         btn.disabled = true;
       }
 

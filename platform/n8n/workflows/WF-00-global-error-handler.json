@@ -22,7 +22,83 @@
         0
       ],
       "parameters": {
-        "jsCode": "// Never echo the failing payload: it may contain caller utterances, and this\n// message is forwarded to staff (I6). Identify the workflow and the node, nothing more.\nconst e = $input.first().json;\nconst wf = e.workflow || {};\nconst ex = e.execution || {};\nreturn [{ json: {\n  text: [\n    'n8n workflow failed',\n    'Workflow: ' + (wf.name || 'unknown'),\n    'Node: ' + (ex.lastNodeExecuted || 'unknown'),\n    'Error: ' + String(ex.error?.message || 'unknown').slice(0, 300),\n    'Execution: ' + (ex.id || 'n/a')\n  ].join('\\n')\n} }];"
+        "jsCode": "// Never echo the failing payload: it may contain caller utterances, and this\n// record is read by staff (I6). Identify the workflow and the node, nothing more.\nconst e = $input.first().json;\nconst wf = e.workflow || {};\nconst ex = e.execution || {};\nconst msg = String((ex.error && ex.error.message) || 'unknown').slice(0, 300);\nreturn [{ json: {\n  failed_at: new Date().toISOString(),\n  workflow: wf.name || 'unknown',\n  node: ex.lastNodeExecuted || 'unknown',\n  message: msg,\n  execution_id: String(ex.id || ''),\n  text: 'n8n workflow failed\\nWorkflow: ' + (wf.name || 'unknown')\n        + '\\nNode: ' + (ex.lastNodeExecuted || 'unknown')\n        + '\\nError: ' + msg,\n} }];"
+      }
+    },
+    {
+      "id": "record",
+      "name": "Record the failure",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "workflow_errors"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "failed_at": "={{ $json.failed_at }}",
+            "workflow": "={{ $json.workflow }}",
+            "node": "={{ $json.node }}",
+            "message": "={{ $json.message }}",
+            "execution_id": "={{ $json.execution_id }}"
+          },
+          "schema": [
+            {
+              "id": "failed_at",
+              "displayName": "failed_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflow",
+              "displayName": "workflow",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "node",
+              "displayName": "node",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
       }
     },
     {
@@ -31,12 +107,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        440,
+        660,
         0
       ],
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/notify/ops",
+        "url": "=__URL__:core-api/internal/notify/ops",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ channel: 'ops', severity: 'error', text: $json.text }) }}",
@@ -51,7 +127,8 @@
           "id": "__CRED__:core-api",
           "name": "__CRED__:core-api"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -67,6 +144,17 @@
       ]
     },
     "Format": {
+      "main": [
+        [
+          {
+            "node": "Record the failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record the failure": {
       "main": [
         [
           {

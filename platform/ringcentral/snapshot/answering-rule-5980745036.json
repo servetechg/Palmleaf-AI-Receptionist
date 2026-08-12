@@ -1,0 +1,60 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/5980745036",
+  "id": "5980745036",
+  "type": "Custom",
+  "name": "1st Shift Sched (Weekdays)",
+  "enabled": true,
+  "schedule": {
+    "weeklyRanges": {
+      "monday": [
+        {
+          "from": "08:00",
+          "to": "13:30"
+        }
+      ],
+      "tuesday": [
+        {
+          "from": "08:00",
+          "to": "13:30"
+        }
+      ],
+      "wednesday": [
+        {
+          "from": "08:00",
+          "to": "13:30"
+        }
+      ],
+      "thursday": [
+        {
+          "from": "08:00",
+          "to": "13:30"
+        }
+      ],
+      "friday": [
+        {
+          "from": "08:00",
+          "to": "17:00"
+        }
+      ]
+    }
+  },
+  "calledNumbers": [
+    {
+      "phoneNumber": "+18479614800"
+    }
+  ],
+  "greetings": [
+    {
+      "type": "Company",
+      "preset": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/greeting/262145",
+        "id": "262145",
+        "name": "Company Greeting"
+      }
+    }
+  ],
+  "callHandlingAction": "Bypass",
+  "extension": {
+    "id": "3226354036"
+  }
+}

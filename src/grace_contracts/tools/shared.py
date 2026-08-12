@@ -1,10 +1,10 @@
 """Shared primitives for tool schemas.
 
 Every ``description=`` here is read by the model on every turn — it is prompt real
-estate, not documentation (doc 02 §4, doc 08 §4.3). Write for a new receptionist,
+estate, not documentation (02-python-and-repo §4, 03-vapi-layer §4.3). Write for a new receptionist,
 not an API consumer.
 
-Two hard rules for tool INPUT models, both learned from live 400s (doc 08 §4.1):
+Two hard rules for tool INPUT models, both learned from live 400s (03-vapi-layer §4.1):
 
 1. **Never use ``X | None``** on an input field. Pydantic renders an optional-with-
    constraints field as ``anyOf``, which Vapi rejects. Use a plain type with a
@@ -68,9 +68,22 @@ class TimePreference(StrEnum):
     ANY = "any"
 
 
+class ContactPreference(StrEnum):
+    """Where the caller wants their confirmation, intake form and any payment link.
+
+    ``BOTH`` is not greedy defaulting — a deposit link that misses costs a booking, so a
+    caller who offers both addresses gets both. What is never allowed is guessing: the
+    handler refuses a channel it has no address for rather than silently downgrading.
+    """
+
+    SMS = "sms"
+    EMAIL = "email"
+    BOTH = "both"
+
+
 class EscalationReason(StrEnum):
     """Closed set, never free text — this value is persisted, and an LLM-authored
-    free-text field summarising a transcript is a PHI route (I6, doc 08 §3.4)."""
+    free-text field summarising a transcript is a PHI route (I6, 03-vapi-layer §3.4)."""
 
     ASKED_FOR_PERSON = "asked_for_person"
     FRUSTRATED = "frustrated"
@@ -89,7 +102,7 @@ class Urgency(StrEnum):
 
 
 class FeeReason(StrEnum):
-    """Machine-readable reason from the pure 48h engine (doc 01 ADR-0011)."""
+    """Machine-readable reason from the pure 48h engine (01-architecture ADR-0011)."""
 
     INSIDE_48H = "inside_48h"
     OUTSIDE_48H = "outside_48h"
@@ -118,7 +131,7 @@ class ToolOutput(BaseModel):
 
 class ToolAck(ToolOutput):
     """Every write tool returns this. The router turns ``spoken`` into the Vapi
-    ``result`` string (doc 04 §5.1).
+    ``result`` string (reference/core-api §5.1).
 
     Subclasses declare their own typed ``data`` field. The base deliberately does not,
     so a subclass narrowing it to a concrete model is not a type error.

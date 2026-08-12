@@ -1,0 +1,41 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/6068302036",
+  "id": "6068302036",
+  "type": "Custom",
+  "name": "3. Wknd Open hrs",
+  "enabled": true,
+  "schedule": {
+    "weeklyRanges": {
+      "saturday": [
+        {
+          "from": "08:00",
+          "to": "20:30"
+        }
+      ],
+      "sunday": [
+        {
+          "from": "08:00",
+          "to": "20:30"
+        }
+      ]
+    }
+  },
+  "calledNumbers": [
+    {
+      "phoneNumber": "+18479614800"
+    }
+  ],
+  "greetings": [
+    {
+      "type": "Company",
+      "custom": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/greeting/369465037",
+        "id": "369465037"
+      }
+    }
+  ],
+  "callHandlingAction": "Bypass",
+  "extension": {
+    "id": "4093004036"
+  }
+}

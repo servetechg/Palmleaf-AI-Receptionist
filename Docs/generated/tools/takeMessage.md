@@ -10,14 +10,15 @@
 
 ## What it does, and when Grace calls it
 
-Take a message for the team when nobody can be reached or the caller prefers a callback. Capture their name, callback number, and a one-line subject. Never record health or medical detail.
+Take a message when nobody can pick up, when the caller prefers a callback, or when a tool has failed twice. Capture name, callback number, and a one-line subject; promise the manager will call back as soon as possible. Never write health or medical detail into any field — say 'a health matter'.
 
 ## Parameters
 
 | Parameter | Type / allowed values | Required | Default | What it means |
 |---|---|---|---|---|
 | `body` | `string`, length 0–600 | no | `""` | Any extra detail the caller gave. Again: no health or medical detail, ever. |
-| `callbackNumber` | `string`, pattern `^\+[1-9]\d{7,14}$` | **yes** | — | Number to call back. Default to the number they are calling from unless they give a different one. |
+| `callbackNumber` | `string`, pattern `^\+[1-9]\d{7,14}$` | **yes** | — | Number to call back, ONLY as the caller spoke it aloud or as it arrived on caller ID. A web call has NO caller ID, so on one you must ask. Never invent a number — a made-up one sends staff to call a stranger. |
+| `callbackNumberConfirmed` | `boolean` | **yes** | — | Set true ONLY after reading the number back digit by digit and hearing the caller confirm it. If you did not read it back, set false. |
 | `callerName` | `string`, length 1–80 | **yes** | — | — |
 | `subject` | `string`, length 1–120 | **yes** | — | One short line: what it is about. NEVER include health or medical detail. |
 

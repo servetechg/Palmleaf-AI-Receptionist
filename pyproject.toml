@@ -6,11 +6,29 @@ requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.9",
     "httpx>=0.27",
+    # RingCentral's official SDK. Used read-only today (account/answering-rule
+    # snapshot); it owns the JWT → access-token exchange, which is the one part
+    # of the RC API not worth hand-rolling.
+    "ringcentral>=0.9",
+    # Postgres driver. psycopg 3 (not psycopg2): native support for the range and
+    # jsonb types the schema leans on, and a sane transaction context manager.
+    "psycopg[binary]>=3.2",
+    # The tool server Vapi calls. FastAPI because the tool contracts are already
+    # Pydantic models — the validation layer exists, this just serves it.
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    # The knowledge base is a commented YAML file so a non-developer can edit what
+    # Grace says without touching SQL.
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "import-linter>=2.1",
+    "types-PyYAML>=6.0",
+    "httpx>=0.27",
     "ruff>=0.7",
     "mypy>=1.13",
 ]
@@ -20,7 +38,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/grace_contracts", "src/grace_platform"]
+packages = ["src/grace_adapters", "src/grace_api", "src/grace_contracts", "src/grace_db", "src/grace_domain", "src/grace_platform", "src/grace_testing", "src/grace_workers"]
 
 # ── ruff ──────────────────────────────────────────────────────────────────────
 [tool.ruff]
@@ -51,6 +69,19 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
+# Pydantic resolves annotations at runtime, so its models cannot move imports into a
+# TYPE_CHECKING block. N818: the port error names are fixed by provider-adapters.md
+# and are part of the contract, not free to rename for a suffix convention.
+"src/grace_contracts/ports/*" = ["TC003", "N818"]
+# Domain error names come from booking-write-path.md and are part of how the state
+# machine is described everywhere else; renaming them for a suffix convention would
+# desynchronise the code from the document it implements.
+"src/grace_domain/*" = ["N818"]
+# psycopg is a runtime dependency in these modules (connect, Json, exception classes),
+# so its import cannot move into a TYPE_CHECKING block. SIM117: the nested `with` in
+# the route handlers keeps the transaction and cursor scopes visibly distinct.
+"src/grace_api/*" = ["TC002", "TC003", "SIM117"]
+"src/grace_db/*" = ["TC002", "TC003", "SIM117"]
 
 # ── mypy ──────────────────────────────────────────────────────────────────────
 # Strict, for the same reason the TypeScript config was strict: the schemas are the
@@ -66,8 +97,64 @@ plugins = ["pydantic.mypy"]
 module = "tests.*"
 disallow_untyped_defs = false
 
+# The RingCentral SDK ships no type information (no py.typed, no stubs). Our own
+# wrapper in src/grace_platform/ringcentral/ stays fully typed; only the import
+# boundary is untyped.
+[[tool.mypy.overrides]]
+module = "ringcentral.*"
+ignore_missing_imports = true
+
 # ── pytest ────────────────────────────────────────────────────────────────────
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-q --strict-markers"
+# Async tests are the norm here (every port method is async); marking each one
+# individually is noise.
+asyncio_mode = "auto"
+
+# ── import-linter ─────────────────────────────────────────────────────────────
+# Invariant I1, mechanically. The frozen docs called I1 "currently unenforced" because
+# the boundary rules were lost in the TypeScript→Python port (ADR-0018, task A-08).
+# This is that replacement: the code path a caller is waiting on cannot reach a third
+# party, because it cannot import the package where third parties live.
+[tool.importlinter]
+root_packages = [
+    "grace_api",
+    "grace_adapters",
+    "grace_contracts",
+    "grace_db",
+    "grace_domain",
+    "grace_platform",
+    "grace_testing",
+    "grace_workers",
+]
+# Needed because one contract forbids external packages (fastapi, psycopg) too.
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "I1 — the hot path cannot reach a third party"
+type = "forbidden"
+source_modules = ["grace_api", "grace_domain"]
+forbidden_modules = ["grace_adapters"]
+
+[[tool.importlinter.contracts]]
+name = "The domain is pure — no database, no web framework"
+type = "forbidden"
+source_modules = ["grace_domain"]
+forbidden_modules = ["grace_db", "fastapi", "psycopg", "httpx"]
+
+[[tool.importlinter.contracts]]
+# The tool server answers a caller and calls nothing outward — its own docstring says so.
+# The notify worker exists precisely to keep that true, so the API must not reach into it
+# and quietly reintroduce outbound HTTP on the hot path.
+name = "The hot path does not do cold-path work"
+type = "forbidden"
+source_modules = ["grace_api"]
+forbidden_modules = ["grace_workers", "httpx"]
+
+[[tool.importlinter.contracts]]
+name = "Contracts depend on nothing of ours"
+type = "forbidden"
+source_modules = ["grace_contracts"]
+forbidden_modules = ["grace_api", "grace_adapters", "grace_db", "grace_domain", "grace_platform"]

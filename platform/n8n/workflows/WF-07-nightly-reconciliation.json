@@ -1,0 +1,232 @@
+{
+  "name": "WF-07 Nightly Reconciliation Report",
+  "nodes": [
+    {
+      "id": "start",
+      "name": "Called by WF-25",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "shape",
+      "name": "Shape the request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// The one line that differs between reports: which Core API report to ask for.\n// The fetch itself lives in WF-23, written once and shared.\nreturn [{ json: { path: '/internal/reports/reconciliation' } }];"
+      }
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch via WF-23",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "workflowId": "__WF__:wf-23",
+        "options": {}
+      }
+    },
+    {
+      "id": "fmt",
+      "name": "Summarise the night",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Map the normalised fetch (WF-23) onto this report's own columns. Core API does\n// not exist yet, so an unreachable service is recorded as such rather than thrown —\n// a report that says \"could not run\" beats no row at all.\nconst r = $input.first().json || {};\nconst b = r.ok ? r.body : {};\nconst checks = Array.isArray(b.checks) ? b.checks : [];\nreturn [{ json: {\n  ran_at: new Date().toISOString(),\n  checks_total: r.ok ? checks.length : 0,\n  checks_failed: r.ok ? checks.filter(c => c && c.passed === false).length : 0,\n  drift_records: r.ok ? Number(b.driftRecords || 0) : 0,\n  summary: r.ok ? String(b.summary || 'reconciliation complete') : String(r.unreachableMessage),\n} }];"
+      }
+    },
+    {
+      "id": "store",
+      "name": "Save report",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "reconciliation_reports"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ran_at": "={{ $json.ran_at }}",
+            "checks_total": "={{ $json.checks_total }}",
+            "checks_failed": "={{ $json.checks_failed }}",
+            "drift_records": "={{ $json.drift_records }}",
+            "summary": "={{ $json.summary }}"
+          },
+          "schema": [
+            {
+              "id": "ran_at",
+              "displayName": "ran_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "checks_total",
+              "displayName": "checks_total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "checks_failed",
+              "displayName": "checks_failed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "drift_records",
+              "displayName": "drift_records",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "shape-email",
+      "name": "Shape the email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Shape the email sent via WF-26 — the report's own summary is the whole body.\nreturn [{ json: {\n  subject: `PalmLeaf nightly reconciliation — ${$json.ran_at}`,\n  body: $json.summary,\n} }];"
+      }
+    },
+    {
+      "id": "email",
+      "name": "Email via WF-26",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "workflowId": "__WF__:wf-26",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Called by WF-25": {
+      "main": [
+        [
+          {
+            "node": "Shape the request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape the request": {
+      "main": [
+        [
+          {
+            "node": "Fetch via WF-23",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch via WF-23": {
+      "main": [
+        [
+          {
+            "node": "Summarise the night",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarise the night": {
+      "main": [
+        [
+          {
+            "node": "Save report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save report": {
+      "main": [
+        [
+          {
+            "node": "Shape the email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape the email": {
+      "main": [
+        [
+          {
+            "node": "Email via WF-26",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "__WF__:wf-00"
+  }
+}

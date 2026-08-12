@@ -1,0 +1,82 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule?page=1&perPage=100",
+  "records": [
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/business-hours-rule",
+      "id": "business-hours-rule",
+      "type": "BusinessHours",
+      "enabled": true
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/6071753036",
+      "id": "6071753036",
+      "type": "Custom",
+      "name": "Ramon Mascarenas",
+      "enabled": false
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/4516027036",
+      "id": "4516027036",
+      "type": "Custom",
+      "name": "4. After Hrs send to VM 8:30pm-8:00am",
+      "enabled": false
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/539433037",
+      "id": "539433037",
+      "type": "Custom",
+      "name": "2nd Shift Sched (Weekdays)",
+      "enabled": true
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/after-hours-rule",
+      "id": "after-hours-rule",
+      "type": "AfterHours",
+      "enabled": true
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/6068302036",
+      "id": "6068302036",
+      "type": "Custom",
+      "name": "3. Wknd Open hrs",
+      "enabled": true
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/5980745036",
+      "id": "5980745036",
+      "type": "Custom",
+      "name": "1st Shift Sched (Weekdays)",
+      "enabled": true
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/6244998036",
+      "id": "6244998036",
+      "type": "Custom",
+      "name": "In-Office Receptionist",
+      "enabled": true
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/6203771036",
+      "id": "6203771036",
+      "type": "Custom",
+      "name": "Ramon Temporary Ext",
+      "enabled": false
+    }
+  ],
+  "paging": {
+    "page": 1,
+    "totalPages": 1,
+    "perPage": 100,
+    "totalElements": 9,
+    "pageStart": 0,
+    "pageEnd": 8
+  },
+  "navigation": {
+    "firstPage": {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule?page=1&perPage=100"
+    },
+    "lastPage": {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule?page=1&perPage=100"
+    }
+  }
+}

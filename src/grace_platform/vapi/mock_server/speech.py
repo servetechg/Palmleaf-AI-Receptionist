@@ -1,4 +1,4 @@
-"""Spoken-English formatters (doc 04 §5.2).
+"""Spoken-English formatters (reference/core-api §5.2).
 
 These move into the Core API formatters package unchanged when it lands — the phrasing
 work is not throwaway. All pure functions, all unit-testable.

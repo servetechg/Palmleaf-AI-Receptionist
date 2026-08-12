@@ -1,0 +1,71 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/4516027036",
+  "id": "4516027036",
+  "type": "Custom",
+  "name": "4. After Hrs send to VM 8:30pm-8:00am",
+  "enabled": false,
+  "schedule": {
+    "weeklyRanges": {
+      "monday": [
+        {
+          "from": "20:30",
+          "to": "08:00"
+        }
+      ],
+      "tuesday": [
+        {
+          "from": "20:30",
+          "to": "08:00"
+        }
+      ],
+      "wednesday": [
+        {
+          "from": "20:30",
+          "to": "08:00"
+        }
+      ],
+      "thursday": [
+        {
+          "from": "20:30",
+          "to": "08:00"
+        }
+      ],
+      "friday": [
+        {
+          "from": "20:30",
+          "to": "08:00"
+        }
+      ],
+      "saturday": [
+        {
+          "from": "20:30",
+          "to": "08:00"
+        }
+      ],
+      "sunday": [
+        {
+          "from": "20:30",
+          "to": "08:00"
+        }
+      ]
+    }
+  },
+  "calledNumbers": [
+    {
+      "phoneNumber": "+18479614800"
+    }
+  ],
+  "greetings": [
+    {
+      "type": "Company",
+      "custom": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/greeting/369465037",
+        "id": "369465037"
+      }
+    }
+  ],
+  "callHandlingAction": "Bypass",
+  "extension": {
+    "id": "3892017036"
+  }
+}

@@ -4,7 +4,7 @@
   "messages": [
     {
       "type": "request-start",
-      "content": "Of course — let me get someone for you.",
+      "content": "Of course \u2014 one moment while I connect you.",
       "blocking": true
     }
   ]

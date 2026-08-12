@@ -1,4 +1,4 @@
-"""Dev-only stand-in for Core API (doc 08 §10).
+"""Dev-only stand-in for Core API (03-vapi-layer §10).
 
 Exposes the SAME two routes with the SAME envelope as Core API will, so switching over
 later is one environment variable. Its real job is not returning plausible strings — it is
@@ -37,7 +37,7 @@ TIMEOUT_TOOL = os.environ.get("GRACE_MOCK_TIMEOUT", "")
 
 # Proves the `{call_id}:{tool_call_id}` key shape and the replay-stored-response path (I3).
 _idempotency: dict[str, str] = {}
-# Whisper text primed by flagEscalation, keyed by call id (doc 08 §7.1). 60s TTL.
+# Whisper text primed by flagEscalation, keyed by call id (03-vapi-layer §7.1). 60s TTL.
 _whispers: dict[str, tuple[str, float]] = {}
 
 

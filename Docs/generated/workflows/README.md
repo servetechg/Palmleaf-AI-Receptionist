@@ -7,14 +7,22 @@
 n8n handles everything that happens **after** a call — notifications, escalation timing, and
 reporting. It is never on the call path: nothing a caller waits for touches n8n.
 
-| Workflow | Status |
-|---|---|
-| [WF-00](WF-00.md) | **Active.** Fires whenever any other workflow errors. |
-| [WF-12](WF-12.md) | **Published but dormant.** Nothing triggers it yet — the signed webhook that would comes from Core API, which is not built. Correct scaffolding, currently inert. |
-| [WF-18](WF-18.md) | **Published but dormant.** Called only by WF-12, which is itself dormant. It also stops short of placing a voice call — that needs Phase F (A-20). |
-| [WF-20](WF-20.md) | **Active.** Runs daily against Vapi's call API. Works today, no Core API needed. |
-| [WF-21](WF-21.md) | **Active.** Runs weekly against Vapi's call API. Works today. |
-| [WF-22](WF-22.md) | **Active.** Runs hourly against Vapi's call API. Works today. |
+| Workflow | Calls | Status |
+|---|---|---|
+| [WF-00](WF-00.md) | — | **Active.** Fires whenever any other workflow errors. |
+| [WF-07](WF-07.md) | WF-23, WF-26 | **Deployed, waiting on integration.** Invoked nightly by WF-25 — it has no schedule of its own any more — and records a row either way, but reports "Core API unreachable" until that service exists. The email step is present and disabled, pending the client's email account. |
+| [WF-11](WF-11.md) | WF-23 | **Deployed, waiting on integration.** Invoked hourly by WF-25 and records a row either way. Reports "Core API unreachable" until that service exists. |
+| [WF-12](WF-12.md) | WF-18 | **Published, active, and dormant.** Its webhook uses n8n's native Header Auth (Q-04.5, resolved) against the `n8n-inbound` credential, which now exists — it deployed cleanly on 2026-08-05. Nothing triggers it yet: the caller is Core API, which is not built. |
+| [WF-17](WF-17.md) | — | **Deployed, active, waiting on integration.** The `n8n-inbound` credential now exists, so it accepts and acknowledges a signed fan-out event today; the two consumer deliveries are present and disabled until the client names their CRM and marketing endpoints. |
+| [WF-18](WF-18.md) | — | **Published but dormant.** Called only by WF-12, which is itself dormant. It also stops short of placing a voice call — that needs Phase F (A-20). |
+| [WF-19](WF-19.md) | — | **Active.** Beats every 15 minutes against Vapi's call API. Works today. Cannot alert while n8n is itself down — see the limit noted in the Code node. |
+| [WF-20](WF-20.md) | WF-24, WF-26 | **Live and running.** Invoked every morning by WF-25 and fetches through WF-24 against Vapi's call API. No Core API needed. |
+| [WF-21](WF-21.md) | WF-24, WF-26 | **Live and running.** Invoked by WF-25 on Monday mornings; fetches through WF-24. |
+| [WF-22](WF-22.md) | WF-24, WF-26 | **Live and running.** Invoked hourly by WF-25; fetches through WF-24. Six successful executions on 2026-08-04. Note that an empty run is the normal outcome — it only writes a row when a call trips a signal. |
+| [WF-23](WF-23.md) | — | **Library workflow.** Called by WF-07 and WF-11 to fetch a Core API report; no independent trigger. |
+| [WF-24](WF-24.md) | — | **Library workflow.** Called by WF-20/21/22 to fetch and normalise Vapi call records; no independent trigger. |
+| [WF-25](WF-25.md) | WF-07, WF-11, WF-20, WF-21, WF-22 | **The reporting switch.** Owns all five report schedules; deactivating it stops every report while the heartbeat keeps running. |
+| [WF-26](WF-26.md) | — | **Built, waiting on configuration.** Skipped by the deploy until the `smtp` credential exists and `GRACE_REPORTS_EMAIL_TO` is set — its four callers are skipped with it, since they cannot resolve a workflow that was never created. |
 
 Instance: `palmleafmassage.app.n8n.cloud`. One account serves both environments, separated by
 the `[dev]` / `[prod]` name prefix and the `env:*` tag.

@@ -1,0 +1,79 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/phone-number?page=1&perPage=100",
+  "records": [
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/phone-number/2905719036",
+      "id": 2905719036,
+      "phoneNumber": "+18479614800",
+      "paymentType": "Local",
+      "location": "Huntley, IL",
+      "type": "VoiceFax",
+      "usageType": "MainCompanyNumber",
+      "status": "PortedIn",
+      "primary": false,
+      "callerIdName": "PALMLEAF MASSAG"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/phone-number/2729728036",
+      "id": 2729728036,
+      "phoneNumber": "+18472324400",
+      "paymentType": "Local",
+      "location": "Park Ridge, IL",
+      "type": "VoiceFax",
+      "usageType": "DirectNumber",
+      "extension": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3228341036",
+        "id": 3228341036,
+        "extensionNumber": "103"
+      },
+      "status": "Temporary",
+      "primary": false,
+      "callerIdName": "PALMLEAF MASSAG"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/phone-number/2729730036",
+      "id": 2729730036,
+      "phoneNumber": "+18477796855",
+      "paymentType": "Local",
+      "location": "Skokie, IL",
+      "type": "VoiceFax",
+      "usageType": "DirectNumber",
+      "extension": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3041612036",
+        "id": 3041612036,
+        "extensionNumber": "101"
+      },
+      "status": "Normal",
+      "primary": false,
+      "callerIdName": "PALMLEAF MASSAG"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/phone-number/2729729036",
+      "id": 2729729036,
+      "phoneNumber": "+18477796878",
+      "paymentType": "Local",
+      "location": "Skokie, IL",
+      "type": "FaxOnly",
+      "usageType": "CompanyFaxNumber",
+      "status": "Normal",
+      "primary": false,
+      "callerIdName": "PALMLEAF MASSAG"
+    }
+  ],
+  "paging": {
+    "page": 1,
+    "totalPages": 1,
+    "perPage": 100,
+    "totalElements": 4,
+    "pageStart": 0,
+    "pageEnd": 3
+  },
+  "navigation": {
+    "firstPage": {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/phone-number?page=1&perPage=100"
+    },
+    "lastPage": {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/phone-number?page=1&perPage=100"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-"""Merge-based drift detection (doc 08 §8.1).
+"""Merge-based drift detection (03-vapi-layer §8.1).
 
 A naive ``local`` vs ``remote`` diff is permanently red: Vapi materialises every server
 default and adds new ones over time. Instead we compare ``remote`` against
@@ -35,7 +35,7 @@ FORBIDDEN_DRIFT: tuple[str, ...] = (
     "artifactPlan.transcriptPlan.enabled",
 )
 """Any drift here is a hard failure, never a warning: these carry compliance or routing
-meaning (doc 08 §8.1)."""
+meaning (03-vapi-layer §8.1)."""
 
 
 def deep_merge(remote: Any, local: Any) -> Any:

@@ -10,14 +10,14 @@
 
 ## What it does, and when Grace calls it
 
-Get services, durations and prices. Call this before stating ANY price or service length. Never quote a price this tool did not return, and never estimate or say "usually about". If it reports the catalogue is unapproved, say you will have someone confirm the price and escalate.
+Get real services, durations, and prices before you mention ANY of them. Pass the caller's own words as the query. Never state a price or duration this tool did not return in this call; never estimate; never say 'usually about'. If it says the catalogue is unapproved, tell the caller the front desk will confirm the exact price, and offer a callback.
 
 ## Parameters
 
 | Parameter | Type / allowed values | Required | Default | What it means |
 |---|---|---|---|---|
 | `isMember` | `boolean` | no | `false` | Set true only if lookupCustomer already confirmed membership. Never assume. |
-| `query` | `string`, length 1–120 | **yes** | — | What the caller asked for, in their words, e.g. '60 minute massage' or 'deep tissue'. Pass it through verbatim. |
+| `query` | `string`, length 1–120 | **yes** | — | What the caller asked for, in their words, e.g. '60 minute massage' or 'deep tissue'. Pass it through verbatim. If they asked openly what we offer, pass 'services' and you will get the whole list. |
 
 Any parameter not listed above is **rejected**, not ignored — the model inventing a field must be a loud error, never silent.
 

@@ -1,0 +1,65 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/ivr-menus",
+  "records": [
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/ivr-menus/400457037",
+      "id": "400457037",
+      "name": "Hours and location office.",
+      "extensionNumber": "3"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/ivr-menus/3226237036",
+      "id": "3226237036",
+      "name": "IVR Welcome Greeting",
+      "extensionNumber": "1001"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/ivr-menus/3226354036",
+      "id": "3226354036",
+      "name": "IVR FSOS (847) 474-3533",
+      "extensionNumber": "1002"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/ivr-menus/3231166036",
+      "id": "3231166036",
+      "name": "IVR PalmLeaf 2 Cell (847) 370-7682",
+      "extensionNumber": "7682"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/ivr-menus/3429947036",
+      "id": "3429947036",
+      "name": "IVR WEEKENDS",
+      "extensionNumber": "1003"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/ivr-menus/3892017036",
+      "id": "3892017036",
+      "name": "IVR - Voicemail Greetings",
+      "extensionNumber": "7684"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/ivr-menus/3945552036",
+      "id": "3945552036",
+      "name": "Ramon After Hours",
+      "extensionNumber": "7685"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/ivr-menus/4038921036",
+      "id": "4038921036",
+      "name": "Ramon Temporary Ext.",
+      "extensionNumber": "7686"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/ivr-menus/4058507036",
+      "id": "4058507036",
+      "name": "IVR - In-Office",
+      "extensionNumber": "1004"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/ivr-menus/4093004036",
+      "id": "4093004036",
+      "name": "IVR - Soneth",
+      "extensionNumber": "7687"
+    }
+  ]
+}

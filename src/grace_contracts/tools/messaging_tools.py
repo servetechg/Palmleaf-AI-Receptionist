@@ -1,7 +1,7 @@
 """Tools 8–10: async messaging.
 
 Vapi marks async tools resolved immediately and never delivers the response to the
-model (doc 08 §4.2) — so the caller-facing acknowledgement MUST come from the tool's
+model (03-vapi-layer §4.2) — so the caller-facing acknowledgement MUST come from the tool's
 ``request-start`` message, never from ``result``.
 
 All three are gated on GATE-09 (A2P 10DLC). Until the campaign is verified the handler

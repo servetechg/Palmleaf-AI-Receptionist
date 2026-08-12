@@ -1,0 +1,65 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/6244998036",
+  "id": "6244998036",
+  "type": "Custom",
+  "name": "In-Office Receptionist",
+  "enabled": true,
+  "schedule": {
+    "weeklyRanges": {
+      "monday": [
+        {
+          "from": "08:30",
+          "to": "17:30"
+        }
+      ],
+      "tuesday": [
+        {
+          "from": "08:30",
+          "to": "17:30"
+        }
+      ],
+      "wednesday": [
+        {
+          "from": "08:30",
+          "to": "17:30"
+        }
+      ],
+      "thursday": [
+        {
+          "from": "08:30",
+          "to": "17:30"
+        }
+      ],
+      "friday": [
+        {
+          "from": "08:30",
+          "to": "17:30"
+        }
+      ],
+      "saturday": [
+        {
+          "from": "08:30",
+          "to": "17:30"
+        }
+      ]
+    }
+  },
+  "calledNumbers": [
+    {
+      "phoneNumber": "+18479614800"
+    }
+  ],
+  "greetings": [
+    {
+      "type": "Company",
+      "custom": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/greeting/369465037",
+        "id": "369465037"
+      }
+    }
+  ],
+  "callHandlingAction": "Bypass",
+  "extension": {
+    "id": "4058507036"
+  }
+}

@@ -95,7 +95,7 @@ I create `.mcp.json` in the project root using `${VAR}` expansion, so **no secre
 | `vapi-docs` | `https://docs.vapi.ai/_mcp/server` | none — public docs server |
 | `n8n` | `${N8N_MCP_URL}` | `Authorization: Bearer ${N8N_MCP_TOKEN}` |
 
-I also add `.mcp.json` to `.gitignore` and commit a `.mcp.json.example` with placeholders, per [09-n8n-layer.md:190](Docs/plans/09-n8n-layer.md#L190).
+I also add `.mcp.json` to `.gitignore` and commit a `.mcp.json.example` with placeholders, per [04-n8n-layer](../plans/04-n8n-layer.md) §13.
 
 Then **you restart Claude Code once more** (new `.mcp.json` = another startup read).
 
@@ -124,7 +124,7 @@ If a server shows **failed**, the cause is almost always one of: env var not exp
 Verified against `docs.vapi.ai`. Six defects, each of which breaks something.
 
 **1. `serverMessages: ["tool-calls"]` disables the end-of-call report.**
-Setting the field *replaces* the default list, it does not extend it. [08-vapi-layer.md:103](Docs/plans/08-vapi-layer.md#L103) therefore unsubscribes from `end-of-call-report`, `status-update`, `hang` and `transfer-destination-request` — killing the call-summary, QA and redaction pipeline that [04-core-api-service.md:99](Docs/plans/04-core-api-service.md#L99) depends on. Fix: subscribe to all five.
+Setting the field *replaces* the default list, it does not extend it. [08-vapi-layer.md:103](../plans/03-vapi-layer.md) therefore unsubscribes from `end-of-call-report`, `status-update`, `hang` and `transfer-destination-request` — killing the call-summary, QA and redaction pipeline that [04-core-api-service.md:99](../reference/core-api.md) depends on. Fix: subscribe to all five.
 
 The §3.1 justification ("mixing them makes the router handle two payload shapes") is also wrong — Vapi documents a server-URL **priority stack**: *Custom Tool → Assistant → Phone Number → Account*. So the split is native: each tool's `server.url` → `/vapi/tools`; the assistant's `server.url` → `/webhooks/vapi/events`. Replace the rationale with the real one: we deliberately do **not** subscribe to `conversation-update`/`transcript`/`speech-update`, because those stream raw caller utterances — including medical detail (I6) and card digits mid-read (I5) — to our server ahead of redaction.
 
@@ -143,7 +143,7 @@ The live mechanism is the first-class **StructuredOutput** resource (`POST /stru
 
 While rewriting the schema, replace the free-text `escalationReason` with a closed enum — an LLM-generated free-text field summarising a transcript that may contain health disclosures is a direct PHI route into a persisted column (I6).
 
-**4. Vapi does not retry failed tool calls.** `Server.backoffPlan` "defaults to undefined (the request will not be retried)". [06-availability-engine.md](Docs/plans/06-availability-engine.md) §6.1 asserts retry-with-same-`toolCallId` as fact. Remove the claim. Idempotency stays — it protects against our own retries and duplicate model turns — but add an opt-in `backoffPlan` on **read** tools only, never the five write tools.
+**4. Vapi does not retry failed tool calls.** `Server.backoffPlan` "defaults to undefined (the request will not be retried)". [06-availability-engine.md](../reference/availability-engine.md) §6.1 asserts retry-with-same-`toolCallId` as fact. Remove the claim. Idempotency stays — it protects against our own retries and duplicate model turns — but add an opt-in `backoffPlan` on **read** tools only, never the five write tools.
 
 **5. `transferToHuman` cannot work as a function tool.** A function tool returns a string the model reads aloud; it cannot transfer a call. Convert it to a `type: "transferCall"` tool with `destinations: []` (empty ⇒ Vapi asks our server), handled by `transfer-destination-request` on the events webhook. `warm-transfer-experimental` is the only mode giving both whisper **and** return-to-assistant on no-answer, matching §7's flow — flag it as experimental.
 
@@ -153,7 +153,7 @@ While rewriting the schema, replace the free-text `escalationReason` with a clos
 
 **6. Test Suites is deprecated and needs a phone number** — doubly blocked for us. Replace §9 with **Simulations** (`POST /eval/simulation/*`), which targets an `assistantId` directly, runs over `vapi.webchat` or `vapi.websocket`, and supports scenario-level **`toolMocks`** for fully deterministic runs with no tool server.
 
-This also fixes the impossible "16 voice calls in an 8-minute PR pipeline" ([13-testing-strategy.md](Docs/plans/13-testing-strategy.md) §9). Three tiers:
+This also fixes the impossible "16 voice calls in an 8-minute PR pipeline" ([13-testing-strategy.md](../plans/07-testing.md) §9). Three tiers:
 
 | Tier | Trigger | Budget | Mechanism |
 |---|---|---|---|
@@ -165,7 +165,7 @@ Scenarios 5 (mid-turn interruption) and 16 (mumbling) are voice-only — chat ca
 
 **Also in the rewrite:** §8 drift must diff `remote` ⟷ `deepMerge(remote, local)`, not `local` ⟷ `remote` — Vapi materialises every server default, so a naive diff is red forever and re-reds each time Vapi ships a new default. Add a `MANAGED_PATHS` allowlist plus a `FORBIDDEN_DRIFT` hard-fail subset (`firstMessage`, system prompt, `serverMessages`, all `server.url`, all tool `parameters`, `compliancePlan`). Add an **hourly** scheduled drift job — that, not the PR check, is what catches a dashboard edit.
 
-Smaller corrections: close the I7 hole (§3 hardcodes `firstMessage` while §6 protects only `first-message.txt`; AC-08.3 tests the file that isn't shipped — make `grace.json` inject from it); `endCallFunctionEnabled` adds a built-in tool so "all 13 tools" in AC-08.4 is imprecise; concurrency is **10 by default** per account and must be raised for the 25-sustained/50-burst target in [01-architecture-foundation.md](Docs/plans/01-architecture-foundation.md) §5; `maxDurationSeconds` default is 600, our 900 is an explicit override; **no per-call or account spend cap exists** in Vapi — state that plainly; explicitly record that Vapi's knowledge-base/files API is **rejected**, because the GROUNDING rule forbids any fact not returned by a tool.
+Smaller corrections: close the I7 hole (§3 hardcodes `firstMessage` while §6 protects only `first-message.txt`; AC-08.3 tests the file that isn't shipped — make `grace.json` inject from it); `endCallFunctionEnabled` adds a built-in tool so "all 13 tools" in AC-08.4 is imprecise; concurrency is **10 by default** per account and must be raised for the 25-sustained/50-burst target in [01-architecture-foundation.md](../plans/01-architecture.md) §5; `maxDurationSeconds` default is 600, our 900 is an explicit override; **no per-call or account spend cap exists** in Vapi — state that plainly; explicitly record that Vapi's knowledge-base/files API is **rejected**, because the GROUNDING rule forbids any fact not returned by a tool.
 
 ### A2. Rewrite `Docs/plans/09-n8n-layer.md`
 
@@ -194,9 +194,9 @@ Smaller corrections: close the I7 hole (§3 hardcodes `firstMessage` while §6 p
 
 **5. Add lint rules 9–15** to the existing 8: no env prefix in committed names; explicit `{{ENV}}/`-prefixed webhook paths; credential ids must match `^__CRED__:`; `errorWorkflow` must be `__WF__:`; no `executionTimeout` on Wait-node workflows (bug #15123 kills waiting executions); no sub-65s Wait used as a durability boundary; Slack webhooks need Raw Body + `responseNode` + a respond node within 2 nodes of signature verification.
 
-**6. Resolve the three-way WF-12 trigger contradiction** in favour of `staff.notify` → outbox → `sync-worker` → signed HTTP → n8n. This is the only reading consistent with [04-core-api-service.md:16](Docs/plans/04-core-api-service.md#L16) and [01-architecture-foundation.md:111](Docs/plans/01-architecture-foundation.md#L111). Define the missing `GRACE_N8N_WEBHOOK_SECRET` and its exact HMAC construction — **no secret exists today for this direction**, while every other direction has one.
+**6. Resolve the three-way WF-12 trigger contradiction** in favour of `staff.notify` → outbox → `sync-worker` → signed HTTP → n8n. This is the only reading consistent with [04-core-api-service.md:16](../reference/core-api.md) and [01-architecture-foundation.md:111](../plans/01-architecture.md). Define the missing `GRACE_N8N_WEBHOOK_SECRET` and its exact HMAC construction — **no secret exists today for this direction**, while every other direction has one.
 
-**7. Specify the seven unspecified workflows.** Only WF-12 has a spec. Also: give the global error workflow a real number (**WF-00**) and put it in the inventory; fix the arithmetic (§57 says "six workflows move into code" — it is ten; [17-open-decisions.md](Docs/plans/17-open-decisions.md) D-7 says seven remain — it is eight); flag that **WF-12/WF-18 send staff SMS via an n8n Twilio node, bypassing the adapter's 10DLC/opt-out enforcement** ([05-provider-adapters.md](Docs/plans/05-provider-adapters.md) §6) — route them back through `/internal/*`.
+**7. Specify the seven unspecified workflows.** Only WF-12 has a spec. Also: give the global error workflow a real number (**WF-00**) and put it in the inventory; fix the arithmetic (§57 says "six workflows move into code" — it is ten; [17-open-decisions.md](../plans/09-open-decisions.md) D-7 says seven remain — it is eight); flag that **WF-12/WF-18 send staff SMS via an n8n Twilio node, bypassing the adapter's 10DLC/opt-out enforcement** ([05-provider-adapters.md](../reference/provider-adapters.md) §6) — route them back through `/internal/*`.
 
 **Good news to record:** n8n Cloud closes several gaps for free. Public HTTPS ingress is solved (Slack can reach it). Wait nodes **≥65s offload to the database and survive restarts** — so WF-12's 15-min and WF-18's 30-min timers are durable without queue mode. Constraints to note: Starter gives **5 concurrent executions** and **7-day execution retention** shared between dev and prod (a dev loop can starve prod); **non-Enterprise API keys have full access to everything** — unmitigable; Slack allows **one Request URL per app**, so dev and prod need **two Slack apps**.
 
@@ -208,20 +208,20 @@ The account-connection runbook, which currently has no home: Vapi org setup, API
 
 | File | Fix |
 |---|---|
-| [01-architecture-foundation.md](Docs/plans/01-architecture-foundation.md) | Add **ADR-0013** (I9 relaxed for one n8n instance — CI is the only *publisher*; n8n v2's draft/publish split means dashboard edits do not reach prod without a deliberate publish; hourly drift detection; exit criteria: Business tier or a second client). Fix ADR-0002's stale text still claiming n8n owns SMS dispatch and end-of-call processing. Clarify that §5's latency numbers are **p95 targets, not hard deadlines** — [04-core-api-service.md](Docs/plans/04-core-api-service.md) §6.4 currently races handlers against a p95 target, which fires the error sentence on 1 call in 20 by construction. |
-| [03-data-model.md](Docs/plans/03-data-model.md) | Add `staff_tasks.acknowledged_at` (WF-18's "unacknowledged for 15 min" is unanswerable without it); add the unique index [07-booking-write-path.md:112](Docs/plans/07-booking-write-path.md#L112) already depends on; document the `"P1"`→smallint mapping; constrain `staff_tasks.type`. |
-| [04-core-api-service.md](Docs/plans/04-core-api-service.md) | Rewrite §6.1 around `credentialId` instead of `server.secret`; write the single authoritative `/internal/*` route table and resolve the `:type` vs `:id` collision; separate deadline from p95 budget. |
-| [17-open-decisions.md](Docs/plans/17-open-decisions.md) | Rewrite A-02; downgrade A-04 to config; add A-13 (HMAC payload format), A-14 (`transferCall` reportedly unsupported on web calls — **our only test channel**), A-15 (`warm-transfer-experimental` honouring a 25s ring). |
+| [01-architecture-foundation.md](../plans/01-architecture.md) | Add **ADR-0013** (I9 relaxed for one n8n instance — CI is the only *publisher*; n8n v2's draft/publish split means dashboard edits do not reach prod without a deliberate publish; hourly drift detection; exit criteria: Business tier or a second client). Fix ADR-0002's stale text still claiming n8n owns SMS dispatch and end-of-call processing. Clarify that §5's latency numbers are **p95 targets, not hard deadlines** — [04-core-api-service.md](../reference/core-api.md) §6.4 currently races handlers against a p95 target, which fires the error sentence on 1 call in 20 by construction. |
+| [03-data-model.md](../reference/data-model.md) | Add `staff_tasks.acknowledged_at` (WF-18's "unacknowledged for 15 min" is unanswerable without it); add the unique index [07-booking-write-path.md:112](../reference/booking-write-path.md) already depends on; document the `"P1"`→smallint mapping; constrain `staff_tasks.type`. |
+| [04-core-api-service.md](../reference/core-api.md) | Rewrite §6.1 around `credentialId` instead of `server.secret`; write the single authoritative `/internal/*` route table and resolve the `:type` vs `:id` collision; separate deadline from p95 budget. |
+| [17-open-decisions.md](../plans/09-open-decisions.md) | Rewrite A-02; downgrade A-04 to config; add A-13 (HMAC payload format), A-14 (`transferCall` reportedly unsupported on web calls — **our only test channel**), A-15 (`warm-transfer-experimental` honouring a 25s ring). |
 
 ---
 
 ## Part B — Implement
 
 ### B1. Repo skeleton
-pnpm workspace, TypeScript strict, `tsx`, vitest, ESLint per [02-repository-and-tooling.md](Docs/plans/02-repository-and-tooling.md) §1 — trimmed to what the platform layers need. No Docker, no Postgres.
+pnpm workspace, TypeScript strict, `tsx`, vitest, ESLint per [02-repository-and-tooling.md](../plans/02-python-and-repo.md) §1 — trimmed to what the platform layers need. No Docker, no Postgres.
 
 ### B2. `packages/contracts`
-Zod input/output schemas for all 13 tools (roadmap task **B-01**), zero deps but zod. Follow the fully-worked `CheckAvailabilityInput` pattern at [02-repository-and-tooling.md](Docs/plans/02-repository-and-tooling.md) §4 — `.strict()` mandatory, `.describe()` on every field (it becomes model-visible prompt text).
+Zod input/output schemas for all 13 tools (roadmap task **B-01**), zero deps but zod. Follow the fully-worked `CheckAvailabilityInput` pattern at [02-repository-and-tooling.md](../plans/02-python-and-repo.md) §4 — `.strict()` mandatory, `.describe()` on every field (it becomes model-visible prompt text).
 
 ### B3. `platform/vapi/`
 `generate-tools.ts` (zod → JSON Schema → tool JSON, CI-drift-checked); `assistants/grace.json` with all six corrections; `prompts/sections/` assembled into `system.md`, with `first-message.txt` as the injected source of truth for I7; `deploy.ts` with the merge-based diff, `.lock.json`, dirty-tree guard; `simulations/` for T2/T3.
@@ -259,7 +259,7 @@ The web harness is ~60 lines: `@vapi-ai/web` 2.6.1, public key, dev `assistantId
 
 ## Handoff to Claude Sonnet
 
-On approval, before Step 0, this plan is copied into the repo as **`Docs/plans/19-vapi-n8n-execution-plan.md`** and linked from [00-INDEX.md](Docs/plans/00-INDEX.md), so it survives this session and Sonnet can execute it directly.
+On approval, before Step 0, this plan is copied into the repo as **`Docs/plans/19-vapi-n8n-execution-plan.md`** and linked from [00-INDEX.md](../plans/00-INDEX.md), so it survives this session and Sonnet can execute it directly.
 
 Suggested execution order for Sonnet, each a separate commit:
 

@@ -1,0 +1,31 @@
+# Local development database.
+#
+# Postgres 16 because the schema uses `EXCLUDE USING gist` with btree_gist, tstzrange
+# containment checks, and partial unique indexes — all long-standing, but 16 is what the
+# frozen data model was written against.
+#
+# This is a DEVELOPMENT database. It holds seeded catalogue data and whatever a test call
+# writes. Nothing here is a backup of anything, and it is not the hosted instance the
+# system will eventually use for unattended operation.
+services:
+  postgres:
+    image: postgres:16
+    container_name: grace-postgres
+    environment:
+      POSTGRES_DB: grace
+      POSTGRES_USER: grace
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-grace-dev}
+    # 5434 on the host, not 5432: this machine already runs a native Postgres on the
+    # default port. Overridable, but the default must not collide with it.
+    ports:
+      - "${GRACE_DB_PORT:-5434}:5432"
+    volumes:
+      - grace-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grace -d grace"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  grace-pgdata:

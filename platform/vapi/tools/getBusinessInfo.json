@@ -1,7 +1,7 @@
 {
   "async": false,
   "function": {
-    "description": "Answer a factual question about the business — hours, address, parking, how to reach us, what we offer, policies, or memberships. Call this instead of answering from memory; you do not know these facts. If the tool says it has no approved answer, do not improvise — escalate.",
+    "description": "Answer any factual question about the business — hours, address, parking, contact, what we offer, policies, memberships, or our team. Call it even when you think you remember the answer; you don't. If it returns no approved answer, say the front desk will confirm and offer a callback or transfer — never improvise.",
     "name": "getBusinessInfo",
     "parameters": {
       "additionalProperties": false,
@@ -15,7 +15,8 @@
             "contact",
             "services_overview",
             "policies",
-            "memberships"
+            "memberships",
+            "team"
           ],
           "type": "string"
         }

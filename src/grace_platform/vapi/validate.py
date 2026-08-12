@@ -1,4 +1,4 @@
-"""T1 static gate (doc 08 §9.1).
+"""T1 static gate (03-vapi-layer §9.1).
 
 Validates every local Vapi artefact OFFLINE against the Vapi OpenAPI spec plus our own
 invariants. No calls to Vapi, no cost, under a second.
@@ -83,19 +83,52 @@ def main() -> int:
         problems.append("I7: grace.json must inject firstMessage, never inline it")
 
     greeting = (HERE / "prompts" / "first-message.txt").read_text(encoding="utf-8").lower()
-    if "may be recorded" not in greeting:
-        problems.append(
-            'I7: first-message.txt is missing the recording disclosure ("may be recorded")'
-        )
-    if "virtual assistant" not in greeting and "ai assistant" not in greeting:
-        problems.append("I7: first-message.txt is missing the AI disclosure")
+    # RECORDING — legally required, not stylistic. Illinois is all-party consent
+    # (720 ILCS 5/14-2, a criminal statute). Disclosure at the start plus the caller
+    # continuing is the standard compliance path. The WORDING is free; the presence is
+    # not. Matches "recorded", so "calls are recorded" and "may be recorded" both pass.
+    if "recorded" not in greeting:
+        problems.append('I7: first-message.txt is missing the recording disclosure ("recorded")')
+
+    # AI DISCLOSURE — deliberately NOT required in the greeting.
+    #
+    # Reviewed 2026-08-08: no enacted Illinois bot-disclosure law. SB 3368 and SB 317 are
+    # pending, not law. California's B.O.T. Act and Utah's AI Policy Act do not reach an
+    # Illinois salon's inbound line, and TCPA/FCC artificial-voice rules govern OUTBOUND
+    # robocalls. So a natural greeting without an "AI assistant" label is lawful today,
+    # which is what the owner asked for.
+    #
+    # What replaces it is stricter where it matters: Grace may never CLAIM to be human
+    # (FTC deception authority), and must answer truthfully when asked. That is enforced
+    # on the system prompt, below, rather than on the greeting.
+    #
+    # ⚠️ RE-CHECK QUARTERLY. If SB 3368/SB 317 or similar is enacted, the AI mention goes
+    # back into the greeting and this check flips to required.
+    # See 05-security-and-compliance.md.
+    for claim in ("human", "real person"):
+        if claim in greeting:
+            problems.append(
+                f'I7: first-message.txt says "{claim}" — Grace must never imply she is a person'
+            )
+
+    # The honesty guarantee moved from the greeting to the prompt: Grace does not
+    # announce what she is, but she never lies about it either. This sentinel is what
+    # makes that a build-time fact rather than a hope.
+    prompt_path = HERE / "prompts" / "system.md"
+    if prompt_path.is_file():
+        system_prompt = prompt_path.read_text(encoding="utf-8")
+        if "Never imply you are human" not in system_prompt:
+            problems.append(
+                'I7: system.md must contain the exact line "Never imply you are human" — '
+                "it is the only thing standing between a natural greeting and a deceptive one"
+            )
 
     # ── serverMessages ────────────────────────────────────────────────────────
     server_messages = assistant.get("serverMessages", [])
     if "end-of-call-report" not in server_messages:
         problems.append(
             'serverMessages omits "end-of-call-report" — setting this field REPLACES the defaults, '
-            "so the call-summary/QA/redaction pipeline would silently never run (doc 08 §3.2)"
+            "so the call-summary/QA/redaction pipeline would silently never run (03-vapi-layer §3.2)"
         )
     if "transfer-destination-request" not in server_messages:
         problems.append(
@@ -105,7 +138,7 @@ def main() -> int:
         if streaming in server_messages:
             problems.append(
                 f'serverMessages includes "{streaming}" — that streams raw caller utterances before '
-                f"redaction (I5/I6 risk, doc 08 §3.2). Remove it."
+                f"redaction (I5/I6 risk, 03-vapi-layer §3.2). Remove it."
             )
 
     if "analysisPlan" in assistant:
@@ -140,7 +173,7 @@ def main() -> int:
         if spec_tool.is_async and not spec_tool.acked_by_next_tool and "messages" not in tool:
             problems.append(
                 f"tools/{spec_tool.name}.json is async but has no request-start message — the caller "
-                f"would hear silence, because an async result never reaches the model (doc 08 §4.2)"
+                f"would hear silence, because an async result never reaches the model (03-vapi-layer §4.2)"
             )
         # Write tools must not retry: a retried booking is a real duplicate.
         if spec_tool.is_write and "backoffPlan" in server:
@@ -173,7 +206,7 @@ def main() -> int:
         if "function" in tool:
             problems.append(
                 f'tools/{name}.json has a "function" property. Its DTO has none, so the model '
-                f"cannot pass arguments to it (doc 08 §7.1)"
+                f"cannot pass arguments to it (03-vapi-layer §7.1)"
             )
         if name == "transferToHuman" and tool.get("destinations") != []:
             problems.append(

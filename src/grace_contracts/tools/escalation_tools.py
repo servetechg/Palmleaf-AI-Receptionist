@@ -2,7 +2,7 @@
 
 ``transferToHuman`` is NOT here — it is a Vapi ``transferCall`` tool with no
 ``function`` property and therefore no schema. It is hand-authored at
-``platform/vapi/tools/transferToHuman.json`` (doc 08 §7.1).
+``platform/vapi/tools/transferToHuman.json`` (03-vapi-layer §7.1).
 """
 
 from __future__ import annotations
@@ -18,8 +18,19 @@ class TakeMessageInput(ToolInput):
     caller_name: str = Field(min_length=1, max_length=80)
     callback_number: PhoneE164 = Field(
         description=(
-            "Number to call back. Default to the number they are calling from unless they "
-            "give a different one."
+            "Number to call back, ONLY as the caller spoke it aloud or as it arrived on "
+            "caller ID. A web call has NO caller ID, so on one you must ask. Never invent a "
+            "number — a made-up one sends staff to call a stranger."
+        )
+    )
+    # A live call on 2026-08-10 filed a callback task with a number nobody had said: the web
+    # call carried no caller ID, and the model filled the gap rather than asking. Same
+    # server-side gate as medical screening (I4) — the prompt is told to read it back, and
+    # this makes it so whether or not the model complied.
+    callback_number_confirmed: bool = Field(
+        description=(
+            "Set true ONLY after reading the number back digit by digit and hearing the "
+            "caller confirm it. If you did not read it back, set false."
         )
     )
     subject: str = Field(

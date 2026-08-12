@@ -1,0 +1,4 @@
+{
+  "_unavailable": "403 This API is not available with enabled feature [NewCallHandlingAndForwarding].",
+  "_path": "/restapi/v1.0/account/~/extension/3041612036/answering-rule?view=Detailed&enabledOnly=false"
+}

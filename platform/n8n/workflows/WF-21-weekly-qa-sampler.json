@@ -2,68 +2,44 @@
   "name": "WF-21 Weekly QA Sampler",
   "nodes": [
     {
-      "id": "cron",
-      "name": "Monday morning",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.3,
+      "id": "start",
+      "name": "Called by WF-25",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
       "position": [
         0,
         0
       ],
       "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "weeks",
-              "triggerAtDay": [
-                1
-              ],
-              "triggerAtHour": 9,
-              "triggerAtMinute": 0
-            }
-          ]
-        }
+        "inputSource": "passthrough"
       }
     },
     {
-      "id": "fetch",
-      "name": "Fetch last week's calls",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "id": "shape",
+      "name": "Shape the request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         220,
         0
       ],
       "parameters": {
-        "method": "GET",
-        "url": "https://api.vapi.ai/call",
-        "sendQuery": true,
-        "specifyQuery": "keypair",
-        "queryParameters": {
-          "parameters": [
-            {
-              "name": "limit",
-              "value": "1000"
-            },
-            {
-              "name": "createdAtGe",
-              "value": "={{ $now.minus(7, 'days').startOf('day').toISO() }}"
-            }
-          ]
-        },
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {
-          "timeout": 30000
-        }
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "__CRED__:vapi",
-          "name": "__CRED__:vapi"
-        }
-      },
-      "alwaysOutputData": true
+        "jsCode": "// The only lines that differ between reports: the fetch window and page size.\n// The fetch itself lives in WF-24, written once and shared.\nreturn [{ json: {\n  sinceIso: $now.minus({ days: 7 }).startOf('day').toISO(),\n  untilIso: $now.toISO(),\n  limit: '1000',\n} }];"
+      }
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch via WF-24",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "workflowId": "__WF__:wf-24",
+        "options": {}
+      }
     },
     {
       "id": "sample",
@@ -71,11 +47,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        440,
+        660,
         0
       ],
       "parameters": {
-        "jsCode": "// Pick 20 calls at random for a human to listen to. Random, not \"worst first\" \u2014\n// sampling the ordinary calls is what catches slow drift in how Grace behaves.\nconst calls = $input.all().map(i => i.json).flat().filter(c => c && c.id);\n\nfor (let i = calls.length - 1; i > 0; i--) {\n  const j = Math.floor(Math.random() * (i + 1));\n  [calls[i], calls[j]] = [calls[j], calls[i]];\n}\n\nconst week = new Date().toISOString().slice(0, 10);\nreturn calls.slice(0, 20).map(c => {\n  const o = (c.analysis && c.analysis.structuredData) || {};\n  return { json: {\n    sampled_week: week,\n    call_id: c.id,\n    started_at: c.startedAt || '',\n    duration_seconds: c.startedAt && c.endedAt\n      ? Math.round((new Date(c.endedAt) - new Date(c.startedAt)) / 1000) : 0,\n    intent: o.intent || 'unknown',\n    booked: String(o.booked === true),\n    escalated: String(o.escalated === true),\n    recording_url: (c.artifact && c.artifact.recordingUrl) || '',\n    reviewed: 'no',\n  } };\n});"
+        "jsCode": "// Pick 20 calls at random for a human to listen to. Random, not \"worst first\" \u2014\n// sampling the ordinary calls is what catches slow drift in how Grace behaves.\nconst calls = (($input.first().json || {}).calls || []).slice();\n\nfor (let i = calls.length - 1; i > 0; i--) {\n  const j = Math.floor(Math.random() * (i + 1));\n  [calls[i], calls[j]] = [calls[j], calls[i]];\n}\n\nconst week = new Date().toISOString().slice(0, 10);\nreturn calls.slice(0, 20).map(c => ({ json: {\n  sampled_week: week,\n  call_id: c.id,\n  started_at: c.startedAt,\n  duration_seconds: Math.round(c.durationSeconds),\n  intent: c.intent,\n  booked: String(c.booked),\n  escalated: String(c.escalated),\n  recording_url: c.recordingUrl,\n  reviewed: 'no',\n} }));"
       }
     },
     {
@@ -84,7 +60,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        660,
+        880,
         0
       ],
       "parameters": {
@@ -195,12 +171,39 @@
       }
     },
     {
+      "id": "shape-email",
+      "name": "Shape the email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Aggregate every sampled call (Save sample ran once per row) into one email.\nconst items = $input.all().map(i => i.json);\nconst lines = items.map(c => `- ${c.call_id} (${c.duration_seconds}s, intent: ${c.intent}) ${c.recording_url}`);\nreturn [{ json: {\n  subject: `PalmLeaf weekly QA sample — ${items[0] ? items[0].sampled_week : ''}`,\n  body: `${items.length} calls sampled for review:\\n\\n${lines.join('\\n')}`,\n} }];"
+      }
+    },
+    {
+      "id": "email",
+      "name": "Email via WF-26",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "workflowId": "__WF__:wf-26",
+        "options": {}
+      }
+    },
+    {
       "id": "pg",
       "name": "Archive to Postgres",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        880,
+        1540,
         0
       ],
       "disabled": true,
@@ -324,18 +327,29 @@
     }
   ],
   "connections": {
-    "Monday morning": {
+    "Called by WF-25": {
       "main": [
         [
           {
-            "node": "Fetch last week's calls",
+            "node": "Shape the request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Fetch last week's calls": {
+    "Shape the request": {
+      "main": [
+        [
+          {
+            "node": "Fetch via WF-24",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch via WF-24": {
       "main": [
         [
           {
@@ -361,7 +375,23 @@
       "main": [
         [
           {
+            "node": "Shape the email",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Archive to Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape the email": {
+      "main": [
+        [
+          {
+            "node": "Email via WF-26",
             "type": "main",
             "index": 0
           }
@@ -370,7 +400,6 @@
     }
   },
   "settings": {
-    "errorWorkflow": "__WF__:wf-00",
-    "timezone": "America/Chicago"
+    "errorWorkflow": "__WF__:wf-00"
   }
 }

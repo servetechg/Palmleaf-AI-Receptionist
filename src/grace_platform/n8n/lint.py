@@ -1,4 +1,4 @@
-"""Structural lint for committed workflow JSON (doc 09 §8).
+"""Structural lint for committed workflow JSON (04-n8n-layer §8).
 
 Runs on every PR. Catches the failure modes that are otherwise only discovered by a caller
 hearing silence, or by a workflow that deploys green and throws on its first execution.
@@ -28,7 +28,12 @@ SECRET_PATTERNS = (
     re.compile(r"Bearer\s+[A-Za-z0-9._-]{20,}"),
 )
 
-WEBHOOK_TYPES = {"n8n-nodes-base.webhook", "n8n-nodes-base.slackTrigger"}
+WEBHOOK_TYPES = {"n8n-nodes-base.webhook"}
+
+#: `$env` reads rule 17 tolerates. Empty, and it must stay empty unless a NEW Cloud blocker
+#: appears with no working replacement. The last entry, GRACE_N8N_WEBHOOK_SECRET, was removed
+#: when WF-12 moved to native Header Auth (Q-04.5, resolved 2026-08-05).
+ENV_ACCESS_KNOWN_BLOCKED: set[str] = set()
 CRED_PLACEHOLDER = re.compile(r"^__CRED__:[a-z0-9-]+$")
 
 problems: list[str] = []
@@ -77,6 +82,16 @@ def lint_file(path: Path) -> None:
             bad(file, 3, f"contains something matching {pattern.pattern}")
     if re.search(r"localhost|127\.0\.0\.1|ngrok|trycloudflare", raw):
         bad(file, 4, "references localhost or a dev tunnel URL")
+
+    # 17. n8n Cloud blocks environment access inside nodes, so `$env.X` throws
+    #     "access to env vars denied" on EVERY execution. It was silently breaking WF-00,
+    #     the global error handler, so no workflow failure was reported at all.
+    #     Base URLs use the __URL__: placeholder, resolved at deploy time instead.
+    for m in re.finditer(r"\$env\.([A-Z0-9_]+)", raw):
+        var = m.group(1)
+        if var in ENV_ACCESS_KNOWN_BLOCKED:
+            continue  # explicitly recorded below, not silently tolerated
+        bad(file, 17, f"uses $env.{var} — denied on n8n Cloud; use a __URL__: placeholder")
 
     name = str(wf.get("name", ""))
     if not file.removesuffix(".json").startswith(name.split(" ")[0]):
@@ -131,10 +146,16 @@ def lint_file(path: Path) -> None:
 
         # 16. A fetch feeding a scheduled report must set alwaysOutputData. Without it n8n
         #     skips every downstream node when the API returns an empty list, so a quiet day
-        #     records nothing at all instead of recording that it was quiet.
+        #     records nothing at all instead of recording that it was quiet. A library
+        #     workflow feeding scheduled reports counts too — WF-23/WF-24 hold the fetches the
+        #     rule was written for, and their trigger is executeWorkflowTrigger, not a cron.
         if (
             ntype == "n8n-nodes-base.httpRequest"
-            and any(n["type"] == "n8n-nodes-base.scheduleTrigger" for n in nodes)
+            and any(
+                n["type"]
+                in ("n8n-nodes-base.scheduleTrigger", "n8n-nodes-base.executeWorkflowTrigger")
+                for n in nodes
+            )
             and not node.get("alwaysOutputData")
         ):
             bad(
@@ -148,6 +169,18 @@ def lint_file(path: Path) -> None:
             params.get("options", {}).get("timeout"), int
         ):
             bad(file, 5, f'HTTP node "{node["name"]}" has no timeout')
+
+        # 18. An Execute Sub-workflow target must be a placeholder, for the same reason
+        #     rule 11 requires it of errorWorkflow: a raw id deploys green on one
+        #     environment and throws at runtime on the other.
+        if ntype == "n8n-nodes-base.executeWorkflow":
+            wf_ref = _str(params.get("workflowId"))
+            if not re.match(r"^__WF__:[a-z0-9-]+$", wf_ref):
+                bad(
+                    file,
+                    18,
+                    f'node "{node["name"]}" workflowId must be __WF__:<alias>, got "{wf_ref}"',
+                )
 
         if ntype == "n8n-nodes-base.wait":
             unit = _str(params.get("unit"), "seconds")
@@ -206,7 +239,7 @@ def main() -> int:
             print(f"    {p}", file=sys.stderr)
         print(file=sys.stderr)
         return 1
-    print(f"✓ {len(files)} workflow(s) pass all 16 lint rules")
+    print(f"✓ {len(files)} workflow(s) pass all 18 lint rules")
     return 0
 
 

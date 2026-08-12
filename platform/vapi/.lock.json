@@ -21,6 +21,9 @@
   "structuredOutputIds": {
     "grace-call-outcome": "3e25e0f5-1cf1-49a5-8c02-7ee10e92f948"
   },
-  "lastAppliedSha": "0d22e1cb3bf1feca901a5aac3c328102e936aa6e",
-  "lastAppliedAt": "2026-08-03T13:59:56.944507+00:00"
+  "phoneNumberIds": {
+    "Grace line (dev)": "fe95f6cf-191a-496e-b6c1-c6c34efb77f1"
+  },
+  "lastAppliedSha": "f32b02549d4a5026f1fb9045b6a0d9ddf43b050c",
+  "lastAppliedAt": "2026-08-12T12:00:35.180882+00:00"
 }

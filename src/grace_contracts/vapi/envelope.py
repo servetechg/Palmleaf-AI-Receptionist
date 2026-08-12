@@ -1,7 +1,7 @@
 """The Vapi <-> Core API wire contract.
 
 Shared by the mock server today and by Core API later, so both are provably speaking the
-same protocol (doc 08 §10).
+same protocol (03-vapi-layer §10).
 """
 
 from __future__ import annotations
@@ -65,7 +65,7 @@ class VapiToolResult(BaseModel):
 
 class VapiToolResponse(BaseModel):
     """ALWAYS this shape, even on error — an HTTP 500 gives the model nothing to say,
-    which is dead air (doc 04 §5.1 rule 4)."""
+    which is dead air (reference/core-api §5.1 rule 4)."""
 
     results: list[VapiToolResult]
 

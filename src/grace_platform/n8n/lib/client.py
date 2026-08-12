@@ -55,7 +55,7 @@ class N8nClient:
         return self._req("PUT", f"/workflows/{wf_id}/tags", [{"id": t} for t in tag_ids])
 
     def activate(self, wf_id: str) -> str:
-        """Which route exists depends on the n8n version (doc 09 §6.4).
+        """Which route exists depends on the n8n version (04-n8n-layer §6.4).
 
         404 = route absent; 405 = path exists but POST is not allowed on this version.
         Observed 405 on palmleafmassage.app.n8n.cloud — catching only 404 was not enough.

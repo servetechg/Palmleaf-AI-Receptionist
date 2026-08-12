@@ -1,0 +1,193 @@
+{
+  "name": "WF-11 Hourly Call Digest",
+  "nodes": [
+    {
+      "id": "start",
+      "name": "Called by WF-25",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "shape",
+      "name": "Shape the request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// The one line that differs between reports: which Core API report to ask for.\n// The fetch itself lives in WF-23, written once and shared.\nreturn [{ json: { path: '/internal/reports/calls?window=1h' } }];"
+      }
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch via WF-23",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "workflowId": "__WF__:wf-23",
+        "options": {}
+      }
+    },
+    {
+      "id": "fmt",
+      "name": "Summarise the hour",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Staff-facing digest of the last hour, mapped from the normalised fetch (WF-23).\n// Distinct from WF-22: this reports NORMAL activity (what happened), WF-22 reports\n// FAULTS (what went wrong). It reads Core API rather than Vapi because it needs\n// bookings and open staff tasks, which Vapi cannot know.\nconst r = $input.first().json || {};\nconst b = r.ok ? r.body : {};\nreturn [{ json: {\n  window_end: new Date().toISOString(),\n  calls: r.ok ? Number(b.calls || 0) : 0,\n  booked: r.ok ? Number(b.booked || 0) : 0,\n  escalated: r.ok ? Number(b.escalated || 0) : 0,\n  open_tasks: r.ok ? Number(b.openTasks || 0) : 0,\n  summary: r.ok ? String(b.summary || 'quiet hour') : String(r.unreachableMessage),\n} }];"
+      }
+    },
+    {
+      "id": "store",
+      "name": "Save digest",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "call_digests"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "window_end": "={{ $json.window_end }}",
+            "calls": "={{ $json.calls }}",
+            "booked": "={{ $json.booked }}",
+            "escalated": "={{ $json.escalated }}",
+            "open_tasks": "={{ $json.open_tasks }}",
+            "summary": "={{ $json.summary }}"
+          },
+          "schema": [
+            {
+              "id": "window_end",
+              "displayName": "window_end",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "calls",
+              "displayName": "calls",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "booked",
+              "displayName": "booked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "escalated",
+              "displayName": "escalated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "open_tasks",
+              "displayName": "open_tasks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Called by WF-25": {
+      "main": [
+        [
+          {
+            "node": "Shape the request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape the request": {
+      "main": [
+        [
+          {
+            "node": "Fetch via WF-23",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch via WF-23": {
+      "main": [
+        [
+          {
+            "node": "Summarise the hour",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarise the hour": {
+      "main": [
+        [
+          {
+            "node": "Save digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "__WF__:wf-00"
+  }
+}

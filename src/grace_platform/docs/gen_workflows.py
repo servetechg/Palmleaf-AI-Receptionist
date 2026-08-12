@@ -29,24 +29,176 @@ BANNER = (
 #: Live ids, so a page points at the thing you can actually open.
 LIVE_IDS: dict[str, str] = {
     "WF-00": "TskMxWsdNPdtyzwz",
+    "WF-07": "CaqwD6oqREcr2mza",
+    "WF-11": "rOz6zbgZzWIBY9Fv",
     "WF-12": "Nig7UzGSTwVZuFLg",
+    "WF-17": "XNrOQHCRUOxffQG7",
     "WF-18": "IvXEhYoHdxT3e7oA",
+    "WF-19": "cmkpTUzQNe2hgycY",
+    "WF-20": "p6dyf5QO26ZtApgG",
+    "WF-21": "aqt18Lr8Y7pjBfcC",
+    "WF-22": "45tFStlOPZ7yMizO",
+    "WF-23": "R83ajpEc5kBPOkW8",
+    "WF-24": "4wKh5fUagueLVmRH",
+    "WF-25": "2RQYvTa95jSt3Qeh",
 }
 
 #: One line per workflow on whether it can currently do anything.
 STATUS: dict[str, str] = {
     "WF-00": "**Active.** Fires whenever any other workflow errors.",
     "WF-12": (
-        "**Published but dormant.** Nothing triggers it yet — the signed webhook that would "
-        "comes from Core API, which is not built. Correct scaffolding, currently inert."
+        "**Published, active, and dormant.** Its webhook uses n8n's native Header Auth "
+        "(Q-04.5, resolved) against the `n8n-inbound` credential, which now exists — it "
+        "deployed cleanly on 2026-08-05. Nothing triggers it yet: the caller is Core API, "
+        "which is not built."
     ),
     "WF-18": (
         "**Published but dormant.** Called only by WF-12, which is itself dormant. It also "
         "stops short of placing a voice call — that needs Phase F (A-20)."
     ),
-    "WF-20": "**Active.** Runs daily against Vapi's call API. Works today, no Core API needed.",
-    "WF-21": "**Active.** Runs weekly against Vapi's call API. Works today.",
-    "WF-22": "**Active.** Runs hourly against Vapi's call API. Works today.",
+    "WF-07": (
+        "**Deployed, waiting on integration.** Invoked nightly by WF-25 — it has no schedule of "
+        "its own any more — and records a row either way, but reports "
+        '"Core API unreachable" until that service exists. The email step is present '
+        "and disabled, pending the client's email account."
+    ),
+    "WF-11": (
+        "**Deployed, waiting on integration.** Invoked hourly by WF-25 and records a row either "
+        'way. Reports "Core API unreachable" until that service exists.'
+    ),
+    "WF-17": (
+        "**Deployed, active, waiting on integration.** The `n8n-inbound` credential now exists, "
+        "so it accepts and acknowledges a signed fan-out event today; the two consumer "
+        "deliveries are present and disabled until the client names their CRM and marketing "
+        "endpoints."
+    ),
+    "WF-19": (
+        "**Active.** Beats every 15 minutes against Vapi's call API. Works today. Cannot alert "
+        "while n8n is itself down — see the limit noted in the Code node."
+    ),
+    "WF-20": (
+        "**Live and running.** Invoked every morning by WF-25 and fetches through WF-24 against "
+        "Vapi's call API. No Core API needed."
+    ),
+    "WF-21": ("**Live and running.** Invoked by WF-25 on Monday mornings; fetches through WF-24."),
+    "WF-22": (
+        "**Live and running.** Invoked hourly by WF-25; fetches through WF-24. Six successful "
+        "executions on 2026-08-04. Note that an empty run is the normal outcome — it only writes "
+        "a row when a call trips a signal."
+    ),
+    "WF-23": (
+        "**Library workflow.** Called by WF-07 and WF-11 to fetch a Core API report; no "
+        "independent trigger."
+    ),
+    "WF-24": (
+        "**Library workflow.** Called by WF-20/21/22 to fetch and normalise Vapi call records; "
+        "no independent trigger."
+    ),
+    "WF-25": (
+        "**The reporting switch.** Owns all five report schedules; deactivating it stops every "
+        "report while the heartbeat keeps running."
+    ),
+    "WF-26": (
+        "**Built, waiting on configuration.** Skipped by the deploy until the `smtp` credential "
+        "exists and `GRACE_REPORTS_EMAIL_TO` is set — its four callers are skipped with it, since "
+        "they cannot resolve a workflow that was never created."
+    ),
+}
+
+#: What each workflow is FOR, in plain language — the counterpart to a tool page's
+#: "What it does, and when Grace calls it". STATUS says whether it can run today; this says why
+#: it exists at all, which is the thing a reader cannot recover from a node list.
+PURPOSE: dict[str, str] = {
+    "WF-00": (
+        "Catches any other workflow's failure and records it where a human can find it. Every "
+        "workflow in the set names this one as its error handler, so a crash anywhere lands here "
+        "rather than vanishing into n8n's execution list. It writes the failure to a table first "
+        "and only then tries to notify anyone — deliberately, because the notify step depends on "
+        "a service that does not exist yet, and a handler that fails while reporting a failure is "
+        "worse than no handler at all."
+    ),
+    "WF-07": (
+        "Checks overnight that our records and the booking system's records still agree, and "
+        "writes down what it found. It reports rather than repairs: nothing here changes a "
+        "booking. Runs at 03:15 so it trails the reconciliation job that finishes by 03:00 — that "
+        "ordering is a real dependency, not a preference."
+    ),
+    "WF-11": (
+        "Tells staff what happened in the last hour — calls taken, bookings made, tasks still "
+        "open. This is the *normal activity* report; its counterpart WF-22 reports faults. It "
+        "reads from Core API rather than from Vapi because bookings and staff tasks are things "
+        "Vapi has no knowledge of."
+    ),
+    "WF-12": (
+        "The front door for anything urgent. When something needs a human, the system posts here "
+        "and this workflow decides who hears about it and how loudly: a P1 pages the manager by "
+        "text and starts a 15-minute timer, a P2 notifies without the alarm, and anything lower "
+        "is filed into a digest. It answers the caller immediately and does the work afterwards, "
+        "so nothing waits on a notification being delivered."
+    ),
+    "WF-17": (
+        "Passes booking-system changes on to whatever other systems the client wants to keep in "
+        "step — a CRM, a marketing list. It acknowledges the sender first and forwards afterwards, "
+        "so a slow or broken consumer can never hold up the booking system that sent it. It "
+        "deliberately forwards only an event type and an identifier, never caller details."
+    ),
+    "WF-18": (
+        "The second stage of an urgent alert, for when the first one went unanswered. WF-12 calls "
+        "it after 15 minutes of silence; it repeats the text message, waits another 30 minutes, "
+        "and escalates again if still unacknowledged. It has no trigger of its own — it cannot "
+        "fire unless the escalation path genuinely reached this point."
+    ),
+    "WF-19": (
+        "Proves the system is still alive. Every 15 minutes it records a heartbeat and checks "
+        "that Vapi still answers and still accepts our key. Because n8n sits off the call path, "
+        "an outage here would otherwise be invisible until someone noticed reports had stopped. "
+        "It is deliberately kept separate from every other workflow: a watchdog that shares an "
+        "on/off switch with the thing it watches is not a watchdog."
+    ),
+    "WF-20": (
+        "The morning summary of yesterday: how many calls, how many became bookings, how many "
+        "needed a person, and the containment rate — the headline number for an AI receptionist. "
+        "A day with no calls still records an explicit zero, because a missing report and a quiet "
+        "day look identical otherwise and need opposite responses."
+    ),
+    "WF-21": (
+        "Picks 20 calls at random each week for a human to listen to. Random rather than "
+        "worst-first on purpose: sampling ordinary calls is what catches slow drift in how Grace "
+        "behaves, which reviewing only the failures never will. It stores links into Vapi rather "
+        "than copies of recordings, so no second copy of sensitive audio is created."
+    ),
+    "WF-22": (
+        "Watches for calls that went wrong — ones that errored, ended in under 15 seconds, or got "
+        "handed to a person. Those three signals each mean something different, and together they "
+        "are the earliest warning that something has broken. It writes nothing at all on a clean "
+        "hour: an empty run is the good outcome here."
+    ),
+    "WF-23": (
+        "Fetches a report from Core API on behalf of whichever workflow asked, and hands back a "
+        "single predictable answer. It exists so that the awkward part — deciding what a missing "
+        "or failed service means — is written once instead of copied into every report. Core API "
+        "does not exist yet, so today it reliably reports that fact rather than crashing."
+    ),
+    "WF-24": (
+        "Fetches call records from Vapi for a given time window and reduces each one to the "
+        "handful of fields the reports actually use. Written once and shared, so the three call "
+        "reports cannot drift apart in how they read a call. It returns everything as a single "
+        "bundle rather than one item per call, which is what lets a quiet window still produce a "
+        "report saying so."
+    ),
+    "WF-25": (
+        "The single on/off switch for all reporting. It owns every report schedule and calls each "
+        "report in turn; the reports themselves have no timers any more, so they cannot run "
+        "behind its back. Switching this one workflow off stops all five reports at once and "
+        "leaves everything else — the heartbeat, the error handler, the escalation path — "
+        "untouched."
+    ),
+    "WF-26": (
+        "Sends a finished report out by email. Each report shapes its own subject and body and "
+        "hands them here, so the mail account, the sending address and the recipient are "
+        "configured in exactly one place. The hourly digest deliberately does not use it — an "
+        "email every hour is noise, and noise is how real alerts get ignored."
+    ),
 }
 
 NODE_KIND = {
@@ -66,16 +218,28 @@ NODE_KIND = {
 }
 
 
-def _node_summary(node: dict[str, Any]) -> str:
-    """One sentence on what this node does, derived from its actual settings."""
+def _str(v: Any, fallback: str = "") -> str:
+    """Narrow an untyped JSON value to a string. n8n fields are `Any` by construction."""
+    return v if isinstance(v, str) else fallback
+
+
+def _node_summary(node: dict[str, Any], settings: dict[str, Any] | None = None) -> str:
+    """One sentence on what this node does, derived from its actual settings.
+
+    ``settings`` is the *workflow's* settings block, not the node's. n8n stores the cron
+    timezone there rather than on the schedule node, so a summary that only reads node
+    parameters reports "no timezone set" for a workflow that pins it correctly.
+    """
     t, p = node["type"], node.get("parameters", {})
+    settings = settings or {}
 
     if t == "n8n-nodes-base.webhook":
         raw = " Raw Body on." if p.get("options", {}).get("rawBody") else ""
         return f"Receives `{p.get('httpMethod', '?')} /{p.get('path', '?')}`.{raw}"
     if t == "n8n-nodes-base.scheduleTrigger":
         rule = json.dumps(p.get("rule", {}))
-        return f"Runs on a schedule ({p.get('timezone', 'no timezone set')}). `{rule[:80]}`"
+        tz = _str(settings.get("timezone")) or "no timezone set"
+        return f"Runs on a schedule ({tz}). `{rule[:80]}`"
     if t == "n8n-nodes-base.errorTrigger":
         return "Fires when any workflow listing this one as its error handler fails."
     if t == "n8n-nodes-base.executeWorkflowTrigger":
@@ -110,7 +274,12 @@ def _node_summary(node: dict[str, Any]) -> str:
     if t == "n8n-nodes-base.respondToWebhook":
         return f"Replies HTTP {p.get('responseCode', 200)} and ends the request."
     if t == "n8n-nodes-base.dataTable":
-        return f"Writes a row to the `{p.get('tableId', '?')}` data table."
+        #: a resource locator — the readable name is under .value, not the field itself
+        ref = p.get("dataTableId")
+        table = _str(ref.get("value")) if isinstance(ref, dict) else _str(ref)
+        cols = (p.get("columns") or {}).get("value") or {}
+        n = f", {len(cols)} columns" if cols else ""
+        return f"Writes a row to the `{table or '?'}` data table{n}."
     if t == "n8n-nodes-base.postgres":
         return "Writes a permanent record to Postgres."
     return "—"
@@ -137,7 +306,40 @@ def _mermaid(wf: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def render(path: Path) -> tuple[str, str]:
+#: An Execute Sub-workflow target, as committed: "__WF__:wf-23" — deploy.py swaps in the real id.
+WF_REF = re.compile(r"^__WF__:wf-(\d+)$")
+
+
+def call_graph() -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+    """Who calls whom, read off the `executeWorkflow` nodes in the committed JSON.
+
+    Without this a reader of WF-23's page has no way to learn that anything calls it — the
+    file itself only says "called by another workflow", and never by whom.
+    """
+    calls: dict[str, list[str]] = {}
+    called_by: dict[str, list[str]] = {}
+    for path in sorted(WORKFLOWS.glob("*.json")):
+        wf = json.loads(path.read_text(encoding="utf-8"))
+        src = str(wf["name"]).split(" ")[0]
+        for node in wf.get("nodes", []):
+            if node.get("type") != "n8n-nodes-base.executeWorkflow":
+                continue
+            m = WF_REF.match(_str(node.get("parameters", {}).get("workflowId")))
+            if m is None:
+                continue
+            dst = f"WF-{m.group(1)}"
+            if dst not in calls.setdefault(src, []):
+                calls[src].append(dst)
+            if src not in called_by.setdefault(dst, []):
+                called_by[dst].append(src)
+    return calls, called_by
+
+
+def render(
+    path: Path,
+    calls: dict[str, list[str]] | None = None,
+    called_by: dict[str, list[str]] | None = None,
+) -> tuple[str, str]:
     wf = json.loads(path.read_text(encoding="utf-8"))
     name = str(wf["name"])
     wf_id = name.split(" ")[0]
@@ -149,11 +351,19 @@ def render(path: Path) -> tuple[str, str]:
         flag = " *(disabled)*" if node.get("disabled") else ""
         rows.append(
             f"| {i} | **{node['name']}**{flag} | {NODE_KIND.get(node['type'], node['type'])} | "
-            f"{_node_summary(node)} | {creds or '—'} |"
+            f"{_node_summary(node, wf.get('settings', {}))} | {creds or '—'} |"
         )
 
     settings = wf.get("settings", {})
     err = settings.get("errorWorkflow", "—")
+
+    edges = ""
+    for label, group in (
+        ("Calls", (calls or {}).get(wf_id)),
+        ("Called by", (called_by or {}).get(wf_id)),
+    ):
+        if group:
+            edges += f"\n**{label}:** " + ", ".join(sorted(group))
 
     body = f"""{BANNER}
 
@@ -161,7 +371,11 @@ def render(path: Path) -> tuple[str, str]:
 
 **Status:** {STATUS.get(wf_id, "—")}
 **Source:** `platform/n8n/workflows/{path.name}`
-**Error handler:** `{err}`
+**Error handler:** `{err}`{edges}
+
+## What it does, and when it runs
+
+{PURPOSE.get(wf_id, "—")}
 
 ## Flow
 
@@ -182,13 +396,14 @@ Runs appear under **Executions**.
     return f"{wf_id}.md", body
 
 
-def render_index(pages: dict[str, str]) -> str:
-    rows = ["| Workflow | Status |", "|---|---|"]
+def render_index(pages: dict[str, str], calls: dict[str, list[str]] | None = None) -> str:
+    rows = ["| Workflow | Calls | Status |", "|---|---|---|"]
     for fname in sorted(pages):
         if fname == "README.md":
             continue
         wf_id = fname.removesuffix(".md")
-        rows.append(f"| [{wf_id}]({fname}) | {STATUS.get(wf_id, '—')} |")
+        targets = ", ".join(sorted((calls or {}).get(wf_id, []))) or "—"
+        rows.append(f"| [{wf_id}]({fname}) | {targets} | {STATUS.get(wf_id, '—')} |")
 
     return f"""{BANNER}
 
@@ -205,8 +420,9 @@ the `[dev]` / `[prod]` name prefix and the `env:*` tag.
 
 
 def build() -> dict[str, str]:
-    pages = dict(render(p) for p in sorted(WORKFLOWS.glob("*.json")))
-    pages["README.md"] = render_index(pages)
+    calls, called_by = call_graph()
+    pages = dict(render(p, calls, called_by) for p in sorted(WORKFLOWS.glob("*.json")))
+    pages["README.md"] = render_index(pages, calls)
     return pages
 
 

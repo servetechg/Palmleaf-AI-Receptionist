@@ -25,7 +25,7 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/notify/sms",
+        "url": "=__URL__:core-api/internal/notify/sms",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ to: 'manager', template: 'p1_unacknowledged', taskId: $json.taskId, summary: $json.summary }) }}",
@@ -40,7 +40,8 @@
           "id": "__CRED__:core-api",
           "name": "__CRED__:core-api"
         }
-      }
+      },
+      "alwaysOutputData": true
     },
     {
       "id": "wait30",
@@ -68,7 +69,7 @@
       ],
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/tasks/{{ $json.taskId }}",
+        "url": "=__URL__:core-api/internal/tasks/{{ $json.taskId }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {
@@ -80,7 +81,8 @@
           "id": "__CRED__:core-api",
           "name": "__CRED__:core-api"
         }
-      }
+      },
+      "alwaysOutputData": true
     },
     {
       "id": "final",
@@ -93,7 +95,7 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/notify/staff",
+        "url": "=__URL__:core-api/internal/notify/staff",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ severity: 'P1', mention: true, escalationLevel: 'oncall-final', taskId: $json.taskId, title: 'UNACKNOWLEDGED 45 MIN', summary: $json.summary }) }}",
@@ -108,7 +110,8 @@
           "id": "__CRED__:core-api",
           "name": "__CRED__:core-api"
         }
-      }
+      },
+      "alwaysOutputData": true
     }
   ],
   "connections": {

@@ -10,7 +10,7 @@
 
 ## What it does, and when Grace calls it
 
-Cancel an existing appointment. The tool decides whether a cancellation fee applies — you do not, and you must never waive one. State the fee it returns before confirming. If the caller disputes it, escalate rather than arguing.
+Cancel an existing appointment Grace can see. The tool decides the cancellation fee — you never do, never waive, never negotiate. State the fee before confirming, and set feeAcknowledged only on a clear yes. If the caller disputes the fee, or the booking can't be found, hand over or take a message — never claim a cancellation you couldn't complete.
 
 ## Parameters
 

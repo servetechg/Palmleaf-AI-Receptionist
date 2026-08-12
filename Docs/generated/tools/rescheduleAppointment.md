@@ -10,7 +10,7 @@
 
 ## What it does, and when Grace calls it
 
-Move an existing appointment to a new day or time. The tool decides whether a change fee applies — you do not. State the fee it returns, in full, before confirming, and only set feeAcknowledged once the caller has agreed.
+Move an existing appointment Grace can see. The tool decides whether a change fee applies — you never do, and you never waive one. State any fee it returns in full BEFORE confirming, and set feeAcknowledged only after the caller clearly agrees. If it can't find the appointment, don't insist — take a message for the front desk instead.
 
 ## Parameters
 

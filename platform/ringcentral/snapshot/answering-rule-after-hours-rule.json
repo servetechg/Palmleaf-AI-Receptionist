@@ -1,0 +1,23 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/after-hours-rule",
+  "id": "after-hours-rule",
+  "type": "AfterHours",
+  "enabled": true,
+  "schedule": {
+    "ref": "AfterHours"
+  },
+  "greetings": [
+    {
+      "type": "Company",
+      "preset": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/greeting/327682",
+        "id": "327682",
+        "name": "Company After Hours Greeting"
+      }
+    }
+  ],
+  "callHandlingAction": "Bypass",
+  "extension": {
+    "id": "3981763036"
+  }
+}

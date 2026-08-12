@@ -5,7 +5,7 @@ the prompt's TOOLS table, the mock server's dispatch, and eventually Core API's 
 Adding a tool means adding a row here and nothing else.
 
 ``transferToHuman`` and ``endCall`` are absent by design: they are Vapi tool *types* with
-no parameters and therefore no Pydantic source (doc 08 §7.1).
+no parameters and therefore no Pydantic source (03-vapi-layer §7.1).
 """
 
 from __future__ import annotations
@@ -59,15 +59,15 @@ class ToolSpec:
 
     description: str
     """Read by the model on every turn — prompt real estate. Written as an instruction to
-    a new receptionist, including what NOT to do with the tool (doc 08 §4.3)."""
+    a new receptionist, including what NOT to do with the tool (03-vapi-layer §4.3)."""
 
     input_model: type[BaseModel]
     output_model: type[BaseModel]
 
     budget_ms: int | None
-    """p95 latency TARGET, from doc 08 §4. NOT a deadline — the deadline is
+    """p95 latency TARGET, from 03-vapi-layer §4. NOT a deadline — the deadline is
     GRACE_TOOL_DEADLINE_MS. Racing a handler against this fires the fallback on ~5% of
-    healthy calls (doc 01 ADR-0012). ``None`` for async tools."""
+    healthy calls (01-architecture ADR-0012). ``None`` for async tools."""
 
     is_async: bool
     """Vapi ``async: true`` — resolved immediately, response never reaches the model."""
@@ -91,10 +91,10 @@ TOOL_REGISTRY: tuple[ToolSpec, ...] = (
     ToolSpec(
         name="getBusinessInfo",
         description=(
-            "Answer a factual question about the business — hours, address, parking, how to "
-            "reach us, what we offer, policies, or memberships. Call this instead of answering "
-            "from memory; you do not know these facts. If the tool says it has no approved "
-            "answer, do not improvise — escalate."
+            "Answer any factual question about the business — hours, address, parking, contact, what "
+            "we offer, policies, memberships, or our team. Call it even when you think you remember t"
+            "he answer; you don't. If it returns no approved answer, say the front desk will confirm "
+            "and offer a callback or transfer — never improvise."
         ),
         input_model=GetBusinessInfoInput,
         output_model=GetBusinessInfoOutput,
@@ -105,9 +105,11 @@ TOOL_REGISTRY: tuple[ToolSpec, ...] = (
     ToolSpec(
         name="lookupCustomer",
         description=(
-            "Look up the caller by the number they are calling from, so you can greet them by "
-            "name and know if they are a member. Call this early. It tells you IF they are a "
-            "member but NOT what members pay — always call getServicesAndPricing for any price."
+            "Look up the caller by the number they're calling from — do it early in every call, silen"
+            "tly. It tells you their name, whether they're a member, and whether they already have an"
+            " upcoming booking (vital when someone calls back after being cut off). It never tells yo"
+            "u prices — getServicesAndPricing does that. Never ask a caller for a different number to"
+            " look up."
         ),
         input_model=LookupCustomerInput,
         output_model=LookupCustomerOutput,
@@ -118,10 +120,10 @@ TOOL_REGISTRY: tuple[ToolSpec, ...] = (
     ToolSpec(
         name="getServicesAndPricing",
         description=(
-            "Get services, durations and prices. Call this before stating ANY price or service "
-            "length. Never quote a price this tool did not return, and never estimate or say "
-            '"usually about". If it reports the catalogue is unapproved, say you will have '
-            "someone confirm the price and escalate."
+            "Get real services, durations, and prices before you mention ANY of them. Pass the caller"
+            "'s own words as the query. Never state a price or duration this tool did not return in t"
+            "his call; never estimate; never say 'usually about'. If it says the catalogue is unappro"
+            "ved, tell the caller the front desk will confirm the exact price, and offer a callback."
         ),
         input_model=GetServicesAndPricingInput,
         output_model=GetServicesAndPricingOutput,
@@ -133,11 +135,12 @@ TOOL_REGISTRY: tuple[ToolSpec, ...] = (
     ToolSpec(
         name="checkAvailability",
         description=(
-            "Find open appointment times. Call this whenever the caller asks about availability, "
-            "mentions a day or time they'd like, or after they choose a service. NEVER guess or "
-            "state a time this tool did not return. If the caller says something vague like "
-            "'sometime next week', pick the first date of that range and call this — you can "
-            "call it again for other days."
+            "Find real open times — call it whenever the caller names a day, a time, or asks what's a"
+            "vailable, and again every time their preference changes. Offer ONLY times it returned, a"
+            "t most three, phrased exactly as given. Vague asks ('sometime next week') pick the first"
+            " plausible date and call it; you can call again for other days. If they asked for a ther"
+            "apist by name, pass the name in providerPreference and trust the tool's verdict on wheth"
+            "er that person exists."
         ),
         input_model=CheckAvailabilityInput,
         output_model=CheckAvailabilityOutput,
@@ -150,10 +153,10 @@ TOOL_REGISTRY: tuple[ToolSpec, ...] = (
     ToolSpec(
         name="createBooking",
         description=(
-            "Book the appointment. Call this only after the caller has chosen a specific time "
-            "you offered AND you have asked the medical screening question. Pass the slot id "
-            "exactly as checkAvailability gave it. If they disclosed anything medical, do not "
-            "call this — call flagMedicalHold and escalate."
+            "Book the chosen slot — only after the caller picked a specific time you offered AND you "
+            "asked the screening question this call. Pass slotId exactly as checkAvailability gave it"
+            ", and bookedForName when the appointment is for someone other than the caller. If anythi"
+            "ng medical came up, do not call this — flagMedicalHold, then hand over."
         ),
         input_model=CreateBookingInput,
         output_model=CreateBookingOutput,
@@ -166,9 +169,10 @@ TOOL_REGISTRY: tuple[ToolSpec, ...] = (
     ToolSpec(
         name="rescheduleAppointment",
         description=(
-            "Move an existing appointment to a new day or time. The tool decides whether a "
-            "change fee applies — you do not. State the fee it returns, in full, before "
-            "confirming, and only set feeAcknowledged once the caller has agreed."
+            "Move an existing appointment Grace can see. The tool decides whether a change fee applie"
+            "s — you never do, and you never waive one. State any fee it returns in full BEFORE confi"
+            "rming, and set feeAcknowledged only after the caller clearly agrees. If it can't find th"
+            "e appointment, don't insist — take a message for the front desk instead."
         ),
         input_model=RescheduleAppointmentInput,
         output_model=RescheduleAppointmentOutput,
@@ -181,9 +185,10 @@ TOOL_REGISTRY: tuple[ToolSpec, ...] = (
     ToolSpec(
         name="cancelAppointment",
         description=(
-            "Cancel an existing appointment. The tool decides whether a cancellation fee "
-            "applies — you do not, and you must never waive one. State the fee it returns "
-            "before confirming. If the caller disputes it, escalate rather than arguing."
+            "Cancel an existing appointment Grace can see. The tool decides the cancellation fee — yo"
+            "u never do, never waive, never negotiate. State the fee before confirming, and set feeAc"
+            "knowledged only on a clear yes. If the caller disputes the fee, or the booking can't be "
+            "found, hand over or take a message — never claim a cancellation you couldn't complete."
         ),
         input_model=CancelAppointmentInput,
         output_model=CancelAppointmentOutput,
@@ -196,7 +201,7 @@ TOOL_REGISTRY: tuple[ToolSpec, ...] = (
     ToolSpec(
         name="sendIntakeForm",
         description=(
-            "Text the caller their intake form after booking. Call this once, right after a "
+            "Have the front desk text their intake form after booking. Call this once, right after a "
             "successful booking. Do not read the link aloud."
         ),
         input_model=SendIntakeFormInput,
@@ -235,9 +240,10 @@ TOOL_REGISTRY: tuple[ToolSpec, ...] = (
     ToolSpec(
         name="takeMessage",
         description=(
-            "Take a message for the team when nobody can be reached or the caller prefers a "
-            "callback. Capture their name, callback number, and a one-line subject. Never "
-            "record health or medical detail."
+            "Take a message when nobody can pick up, when the caller prefers a callback, or when a to"
+            "ol has failed twice. Capture name, callback number, and a one-line subject; promise the "
+            "manager will call back as soon as possible. Never write health or medical detail into an"
+            "y field — say 'a health matter'."
         ),
         input_model=TakeMessageInput,
         output_model=TakeMessageOutput,
@@ -249,6 +255,8 @@ TOOL_REGISTRY: tuple[ToolSpec, ...] = (
     ToolSpec(
         name="flagMedicalHold",
         description=(
+            "Call this the instant a caller mentions their own surgery, condition, "
+            "medication, pregnancy, or treatment — even in passing. "
             "Call this the instant a caller mentions surgery, an injury, a condition, "
             "medication, pregnancy, or any treatment — even in passing. It blocks the booking "
             "so a qualified person can follow up. Do NOT ask what the condition is, do NOT "
@@ -263,10 +271,10 @@ TOOL_REGISTRY: tuple[ToolSpec, ...] = (
     ToolSpec(
         name="flagEscalation",
         description=(
-            "Call this IMMEDIATELY BEFORE transferToHuman, every single time. It creates the "
-            "staff task and gives the person picking up the context they need — without it "
-            "they answer blind. Summarise in one sentence, and never put medical or health "
-            'detail in the summary; say "a health matter" instead.'
+            "Prime the human handoff — call this immediately before transferToHuman, every single tim"
+            "e, and also when arranging a manager callback for an upset caller. The summary is what t"
+            "he person picking up sees; one plain sentence, never any medical or health detail — writ"
+            "e 'a health matter' instead."
         ),
         input_model=FlagEscalationInput,
         output_model=FlagEscalationOutput,

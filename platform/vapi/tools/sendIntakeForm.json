@@ -1,7 +1,7 @@
 {
   "async": true,
   "function": {
-    "description": "Text the caller their intake form after booking. Call this once, right after a successful booking. Do not read the link aloud.",
+    "description": "Have the front desk text their intake form after booking. Call this once, right after a successful booking. Do not read the link aloud.",
     "name": "sendIntakeForm",
     "parameters": {
       "additionalProperties": false,

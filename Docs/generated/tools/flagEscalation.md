@@ -10,7 +10,7 @@
 
 ## What it does, and when Grace calls it
 
-Call this IMMEDIATELY BEFORE transferToHuman, every single time. It creates the staff task and gives the person picking up the context they need — without it they answer blind. Summarise in one sentence, and never put medical or health detail in the summary; say "a health matter" instead.
+Prime the human handoff — call this immediately before transferToHuman, every single time, and also when arranging a manager callback for an upset caller. The summary is what the person picking up sees; one plain sentence, never any medical or health detail — write 'a health matter' instead.
 
 ## Parameters
 

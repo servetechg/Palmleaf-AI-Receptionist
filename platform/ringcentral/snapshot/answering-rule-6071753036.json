@@ -1,0 +1,71 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/6071753036",
+  "id": "6071753036",
+  "type": "Custom",
+  "name": "Ramon Mascarenas",
+  "enabled": false,
+  "schedule": {
+    "weeklyRanges": {
+      "monday": [
+        {
+          "from": "17:00",
+          "to": "20:30"
+        }
+      ],
+      "tuesday": [
+        {
+          "from": "17:00",
+          "to": "20:30"
+        }
+      ],
+      "wednesday": [
+        {
+          "from": "17:00",
+          "to": "20:30"
+        }
+      ],
+      "thursday": [
+        {
+          "from": "17:00",
+          "to": "20:30"
+        }
+      ],
+      "friday": [
+        {
+          "from": "17:00",
+          "to": "20:30"
+        }
+      ],
+      "saturday": [
+        {
+          "from": "08:00",
+          "to": "20:30"
+        }
+      ],
+      "sunday": [
+        {
+          "from": "08:00",
+          "to": "20:30"
+        }
+      ]
+    }
+  },
+  "calledNumbers": [
+    {
+      "phoneNumber": "+18479614800"
+    }
+  ],
+  "greetings": [
+    {
+      "type": "Company",
+      "custom": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/greeting/369465037",
+        "id": "369465037"
+      }
+    }
+  ],
+  "callHandlingAction": "Bypass",
+  "extension": {
+    "id": "3945552036"
+  }
+}

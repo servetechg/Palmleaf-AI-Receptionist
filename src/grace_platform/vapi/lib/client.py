@@ -63,6 +63,16 @@ class VapiClient:
     def update_tool(self, tool_id: str, body: Any) -> dict[str, Any]:
         return dict(self._req("PATCH", f"/tool/{tool_id}", body))
 
+    # ── phone numbers ─────────────────────────────────────────────────────────
+    def list_phone_numbers(self) -> list[dict[str, Any]]:
+        return list(self._req("GET", "/phone-number?limit=100"))
+
+    def create_phone_number(self, body: Any) -> dict[str, Any]:
+        return dict(self._req("POST", "/phone-number", body))
+
+    def update_phone_number(self, number_id: str, body: Any) -> dict[str, Any]:
+        return dict(self._req("PATCH", f"/phone-number/{number_id}", body))
+
     # ── structured outputs ────────────────────────────────────────────────────
     def list_structured_outputs(self) -> list[dict[str, Any]]:
         raw = self._req("GET", "/structured-output?limit=100")

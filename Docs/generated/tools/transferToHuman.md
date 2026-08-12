@@ -21,7 +21,7 @@ _None._ This is a Vapi `transferCall` tool, not a function tool, so **it takes n
 
 ## What the caller hears
 
-- **When triggered:** "Of course — let me get someone for you."
+- **When triggered:** "Of course — one moment while I connect you."
 
 ## Where to see it
 

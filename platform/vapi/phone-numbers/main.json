@@ -1,0 +1,8 @@
+{
+  "provider": "byo-phone-number",
+  "name": "PalmLeaf main line",
+  "number": "${GRACE_MAIN_LINE_NUMBER}",
+  "credentialId": "${GRACE_SIP_TRUNK_CREDENTIAL_ID}",
+  "assistantId": "${GRACE_ASSISTANT_ID}",
+  "numberE164CheckEnabled": true
+}

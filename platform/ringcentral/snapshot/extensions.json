@@ -1,0 +1,541 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension?page=1&perPage=100",
+  "records": [
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/400457037",
+      "id": 400457037,
+      "extensionNumber": "3",
+      "contact": {
+        "firstName": "Hours and location office.",
+        "pronouncedName": {
+          "type": "Default",
+          "text": "Hours and location office."
+        }
+      },
+      "name": "Hours and location office.",
+      "type": "IvrMenu",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": true
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/400457037/profile-image"
+      },
+      "hidden": true,
+      "creationTime": "2024-01-12T16:47:46Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3041612036",
+      "id": 3041612036,
+      "extensionNumber": "101",
+      "contact": {
+        "firstName": "Soneth",
+        "lastName": "Zanoria",
+        "company": "PalmLeaf Massage Clinic",
+        "email": "palmleafbiz@gmail.com",
+        "businessPhone": "+17734192727",
+        "emailAsLoginName": true,
+        "pronouncedName": {
+          "type": "Recorded",
+          "text": "PalmLeaf Massage Clinic",
+          "prompt": {
+            "id": "5724533036",
+            "contentType": "audio/wav",
+            "contentUri": "https://media.ringcentral.com/restapi/v1.0/account/3041612036/extension/3041612036/greeting/5724533036/content"
+          }
+        }
+      },
+      "roles": [
+        {
+          "id": "1"
+        }
+      ],
+      "name": "Soneth Zanoria",
+      "type": "User",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": true
+        },
+        "internationalCalling": {
+          "enabled": true
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3041612036/profile-image"
+      },
+      "hidden": false,
+      "assignedCountry": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/country/1",
+        "id": "1",
+        "name": "United States",
+        "isoCode": "US"
+      },
+      "creationTime": "2023-10-24T16:01:19Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3226237036",
+      "id": 3226237036,
+      "extensionNumber": "1001",
+      "contact": {
+        "firstName": "IVR Welcome Greeting",
+        "pronouncedName": {
+          "type": "Default",
+          "text": "IVR Welcome Greeting"
+        }
+      },
+      "name": "IVR Welcome Greeting",
+      "type": "IvrMenu",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": true
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3226237036/profile-image"
+      },
+      "hidden": true,
+      "creationTime": "2024-01-19T17:10:45Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3226245036",
+      "id": 3226245036,
+      "extensionNumber": "2",
+      "contact": {
+        "firstName": "Voicemail messages",
+        "email": "palmleafbiz@gmail.com",
+        "pronouncedName": {
+          "type": "Recorded",
+          "text": "Voicemail messages",
+          "prompt": {
+            "id": "5503743036",
+            "contentType": "audio/wav",
+            "contentUri": "https://media.ringcentral.com/restapi/v1.0/account/3041612036/extension/3226245036/greeting/5503743036/content"
+          }
+        }
+      },
+      "name": "Voicemail messages",
+      "type": "Voicemail",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": false
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3226245036/profile-image"
+      },
+      "hidden": false,
+      "creationTime": "2024-01-19T17:26:16Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3226354036",
+      "id": 3226354036,
+      "extensionNumber": "1002",
+      "contact": {
+        "firstName": "IVR FSOS (847) 474-3533",
+        "pronouncedName": {
+          "type": "Default",
+          "text": "IVR FSOS (847) 474-3533"
+        }
+      },
+      "name": "IVR FSOS (847) 474-3533",
+      "type": "IvrMenu",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": true
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3226354036/profile-image"
+      },
+      "hidden": true,
+      "creationTime": "2024-01-19T19:13:29Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3228341036",
+      "id": 3228341036,
+      "extensionNumber": "103",
+      "contact": {
+        "firstName": "Clinic",
+        "lastName": "Cordless Phone",
+        "email": "palmleafbiz@gmail.com",
+        "emailAsLoginName": false,
+        "pronouncedName": {
+          "type": "Recorded",
+          "text": "Clinic  Cordless Phone",
+          "prompt": {
+            "id": "5495495036",
+            "contentType": "audio/wav",
+            "contentUri": "https://media.ringcentral.com/restapi/v1.0/account/3041612036/extension/3228341036/greeting/5495495036/content"
+          }
+        }
+      },
+      "roles": [
+        {
+          "id": "6"
+        }
+      ],
+      "name": "Clinic Cordless Phone",
+      "type": "User",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": true
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3228341036/profile-image"
+      },
+      "hidden": false,
+      "assignedCountry": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/country/1",
+        "id": "1",
+        "name": "United States",
+        "isoCode": "US"
+      },
+      "creationTime": "2024-01-22T22:32:17Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3231166036",
+      "id": 3231166036,
+      "extensionNumber": "7682",
+      "contact": {
+        "firstName": "IVR PalmLeaf 2 Cell (847) 370-7682",
+        "pronouncedName": {
+          "type": "Default",
+          "text": "IVR PalmLeaf 2 Cell (847) 370-7682"
+        }
+      },
+      "name": "IVR PalmLeaf 2 Cell (847) 370-7682",
+      "type": "IvrMenu",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": true
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3231166036/profile-image"
+      },
+      "hidden": true,
+      "creationTime": "2024-01-23T18:16:00Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3429947036",
+      "id": 3429947036,
+      "extensionNumber": "1003",
+      "contact": {
+        "firstName": "IVR WEEKENDS",
+        "pronouncedName": {
+          "type": "Default",
+          "text": "IVR WEEKENDS"
+        }
+      },
+      "name": "IVR WEEKENDS",
+      "type": "IvrMenu",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": true
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3429947036/profile-image"
+      },
+      "hidden": true,
+      "creationTime": "2024-02-13T16:37:31Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3892016036",
+      "id": 3892016036,
+      "extensionNumber": "1",
+      "contact": {
+        "firstName": "Call Back prompt",
+        "email": "sonethpalmleaf@gmail.com",
+        "pronouncedName": {
+          "type": "Recorded",
+          "text": "Call Back prompt",
+          "prompt": {
+            "id": "5530845036",
+            "contentType": "audio/wav",
+            "contentUri": "https://media.ringcentral.com/restapi/v1.0/account/3041612036/extension/3892016036/greeting/5530845036/content"
+          }
+        }
+      },
+      "name": "Call Back prompt",
+      "type": "Announcement",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": false
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3892016036/profile-image"
+      },
+      "hidden": false,
+      "creationTime": "2024-02-18T21:03:04Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3892017036",
+      "id": 3892017036,
+      "extensionNumber": "7684",
+      "contact": {
+        "firstName": "IVR - Voicemail Greetings",
+        "pronouncedName": {
+          "type": "Default",
+          "text": "IVR - Voicemail Greetings"
+        }
+      },
+      "name": "IVR - Voicemail Greetings",
+      "type": "IvrMenu",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": true
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3892017036/profile-image"
+      },
+      "hidden": true,
+      "creationTime": "2024-02-18T21:10:52Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3945552036",
+      "id": 3945552036,
+      "extensionNumber": "7685",
+      "contact": {
+        "firstName": "Ramon After Hours",
+        "pronouncedName": {
+          "type": "Default",
+          "text": "Ramon After Hours"
+        }
+      },
+      "name": "Ramon After Hours",
+      "type": "IvrMenu",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": true
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3945552036/profile-image"
+      },
+      "hidden": true,
+      "creationTime": "2024-07-11T21:59:26Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3981763036",
+      "id": 3981763036,
+      "extensionNumber": "4",
+      "contact": {
+        "firstName": "Voicemail Greetings",
+        "email": "palmleafbiz@gmail.com",
+        "pronouncedName": {
+          "type": "Recorded",
+          "text": "Voicemail Greetings",
+          "prompt": {
+            "id": "5747964036",
+            "contentType": "audio/wav",
+            "contentUri": "https://media.ringcentral.com/restapi/v1.0/account/3041612036/extension/3981763036/greeting/5747964036/content"
+          }
+        }
+      },
+      "name": "Voicemail Greetings",
+      "type": "Voicemail",
+      "status": "NotActivated",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": false
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3981763036/profile-image"
+      },
+      "hidden": false,
+      "creationTime": "2024-11-27T03:31:41Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/4038921036",
+      "id": 4038921036,
+      "extensionNumber": "7686",
+      "contact": {
+        "firstName": "Ramon Temporary Ext.",
+        "pronouncedName": {
+          "type": "Default",
+          "text": "Ramon Temporary Ext."
+        }
+      },
+      "name": "Ramon Temporary Ext.",
+      "type": "IvrMenu",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": true
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/4038921036/profile-image"
+      },
+      "hidden": true,
+      "creationTime": "2025-06-27T22:53:24Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/4058507036",
+      "id": 4058507036,
+      "extensionNumber": "1004",
+      "contact": {
+        "firstName": "IVR - In-Office",
+        "pronouncedName": {
+          "type": "Default",
+          "text": "IVR - In-Office"
+        }
+      },
+      "name": "IVR - In-Office",
+      "type": "IvrMenu",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": true
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/4058507036/profile-image"
+      },
+      "hidden": true,
+      "creationTime": "2025-09-11T17:49:40Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/4061311036",
+      "id": 4061311036,
+      "extensionNumber": "5",
+      "contact": {
+        "firstName": "Soneth & Clinic Phone",
+        "pronouncedName": {
+          "type": "Recorded",
+          "text": "Soneth & Clinic Phone",
+          "prompt": {
+            "id": "5953205036",
+            "contentType": "audio/wav",
+            "contentUri": "https://media.ringcentral.com/restapi/v1.0/account/3041612036/extension/4061311036/greeting/5953205036/content"
+          }
+        }
+      },
+      "name": "Soneth & Clinic Phone",
+      "type": "Department",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": false
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/4061311036/profile-image"
+      },
+      "hidden": false,
+      "creationTime": "2025-09-21T14:24:07Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/4093004036",
+      "id": 4093004036,
+      "extensionNumber": "7687",
+      "contact": {
+        "firstName": "IVR - Soneth",
+        "pronouncedName": {
+          "type": "Default",
+          "text": "IVR - Soneth"
+        }
+      },
+      "name": "IVR - Soneth",
+      "type": "IvrMenu",
+      "status": "Enabled",
+      "permissions": {
+        "admin": {
+          "enabled": false
+        },
+        "internationalCalling": {
+          "enabled": true
+        }
+      },
+      "profileImage": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/4093004036/profile-image"
+      },
+      "hidden": true,
+      "creationTime": "2026-02-15T17:10:07Z"
+    },
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/4101830036/extension/4101830036",
+      "id": 4101830036,
+      "name": "Company",
+      "type": "CompanyExtension",
+      "status": "Enabled",
+      "hidden": true,
+      "creationTime": "2026-03-11T07:21:02Z"
+    }
+  ],
+  "paging": {
+    "page": 1,
+    "totalPages": 1,
+    "perPage": 100,
+    "totalElements": 17,
+    "pageStart": 0,
+    "pageEnd": 16
+  },
+  "navigation": {
+    "firstPage": {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension?page=1&perPage=100"
+    },
+    "lastPage": {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension?page=1&perPage=100"
+    }
+  }
+}

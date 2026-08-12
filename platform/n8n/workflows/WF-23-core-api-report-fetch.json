@@ -1,0 +1,91 @@
+{
+  "name": "WF-23 Core API Report Fetch",
+  "nodes": [
+    {
+      "id": "start",
+      "name": "Called by report",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=__URL__:core-api{{ $json.path }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CRED__:core-api",
+          "name": "__CRED__:core-api"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "norm",
+      "name": "Normalise the response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Library workflow: fetch a Core API report and normalise the outcome, written once.\n// Callers (WF-07, WF-11) pass { path } and read back { ok, statusCode, body,\n// unreachableMessage }. Core API does not exist yet, so a non-2xx is EXPECTED and\n// returned as data — a report that says \"could not run\" beats no row at all.\nconst r = $input.first().json || {};\nconst code = Number(r.statusCode || 0);\nconst ok = code >= 200 && code < 300;\nreturn [{ json: {\n  ok,\n  statusCode: code,\n  body: (ok && r.body) || {},\n  unreachableMessage: 'Core API unreachable (HTTP ' + (code || 'no response') + ') — not yet built',\n} }];"
+      }
+    }
+  ],
+  "connections": {
+    "Called by report": {
+      "main": [
+        [
+          {
+            "node": "Fetch report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch report": {
+      "main": [
+        [
+          {
+            "node": "Normalise the response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "__WF__:wf-00"
+  }
+}

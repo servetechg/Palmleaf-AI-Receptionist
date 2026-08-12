@@ -5,8 +5,8 @@ Config-as-code for the Vapi assistant "Grace" (ADR-0010). Nothing here is edited
 and CI-checked for drift.
 
 **Read [`Docs/plans/19-vapi-n8n-execution-plan.md`](../../Docs/plans/19-vapi-n8n-execution-plan.md)
-before touching this directory.** The original spec (doc 08) contains config verified not to work
-against the current Vapi API — doc 19 §A1 lists every correction.
+before touching this directory.** The original spec (03-vapi-layer) contains config verified not to work
+against the current Vapi API — Completed/EXECUTED-vapi-n8n-plan §A1 lists every correction.
 
 ## Layout
 
@@ -27,7 +27,7 @@ deploy.ts                   diff + apply against the Vapi REST API
 ## Status
 
 Populated in build steps **B3** (assistant, prompts, generate/deploy) and **B4** (mock server, web
-harness) of doc 19. `assistants/grace.json` is not written until doc 08's rewrite (doc 19 §A1) lands,
-so that the checked-in config matches the verified API — not the six defects doc 19 found in the
+harness) of Completed/EXECUTED-vapi-n8n-plan. `assistants/grace.json` is not written until 03-vapi-layer's rewrite (Completed/EXECUTED-vapi-n8n-plan §A1) lands,
+so that the checked-in config matches the verified API — not the six defects Completed/EXECUTED-vapi-n8n-plan found in the
 original spec (dead `server.secret`, invalid `analysisPlan` fields, a `serverMessages` list that
 silently drops the end-of-call report, etc.).

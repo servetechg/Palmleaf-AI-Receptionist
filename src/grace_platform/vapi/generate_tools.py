@@ -1,7 +1,7 @@
 """Generates platform/vapi/tools/*.json from the Pydantic registry in grace_contracts.
 
 Runs in CI. If a generated file differs from what is committed, CI fails — the tool schema
-published to Vapi and the schema the handler validates against cannot drift (doc 08 §2).
+published to Vapi and the schema the handler validates against cannot drift (03-vapi-layer §2).
 
     python -m grace_platform.vapi.generate_tools           write files
     python -m grace_platform.vapi.generate_tools --check   exit 1 if anything would change

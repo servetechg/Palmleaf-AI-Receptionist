@@ -1,7 +1,7 @@
 {
   "async": false,
   "function": {
-    "description": "Find open appointment times. Call this whenever the caller asks about availability, mentions a day or time they'd like, or after they choose a service. NEVER guess or state a time this tool did not return. If the caller says something vague like 'sometime next week', pick the first date of that range and call this — you can call it again for other days.",
+    "description": "Find real open times — call it whenever the caller names a day, a time, or asks what's available, and again every time their preference changes. Offer ONLY times it returned, at most three, phrased exactly as given. Vague asks ('sometime next week') pick the first plausible date and call it; you can call again for other days. If they asked for a therapist by name, pass the name in providerPreference and trust the tool's verdict on whether that person exists.",
     "name": "checkAvailability",
     "parameters": {
       "additionalProperties": false,

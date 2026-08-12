@@ -15,51 +15,15 @@
         "httpMethod": "POST",
         "path": "{{ENV}}/escalation",
         "responseMode": "responseNode",
+        "authentication": "headerAuth",
         "options": {
           "rawBody": true
         }
-      }
-    },
-    {
-      "id": "verify",
-      "name": "Verify signature",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        220,
-        0
-      ],
-      "parameters": {
-        "jsCode": "// HMAC per doc 09 \u00a72.1. The signature covers the exact bytes, so Raw Body must be on.\nconst crypto = require('crypto');\nconst secret = $env.GRACE_N8N_WEBHOOK_SECRET;\nif (!secret) throw new Error('GRACE_N8N_WEBHOOK_SECRET is not set on this instance');\n\nconst h = $input.first().json.headers || {};\nconst raw = $input.first().json.rawBody?.toString('utf8') ?? '';\nconst ts = String(h['x-grace-timestamp'] ?? '');\nconst sig = String(h['x-grace-signature'] ?? '');\n\nconst skew = Math.abs(Date.now() / 1000 - Number(ts));\nif (!ts || !sig || Number.isNaN(skew) || skew > 300) {\n  return [{ json: { ok: false, code: 401, why: 'missing or stale timestamp' } }];\n}\n\nconst expected = crypto.createHmac('sha256', secret).update(ts + '.' + raw).digest('hex');\nconst a = Buffer.from(expected); const b = Buffer.from(sig);\nif (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {\n  return [{ json: { ok: false, code: 401, why: 'bad signature' } }];\n}\n\nlet body = {};\ntry { body = JSON.parse(raw); } catch { return [{ json: { ok: false, code: 400, why: 'bad json' } }]; }\n\nreturn [{ json: {\n  ok: true,\n  taskId: body.taskId,\n  type: body.type,\n  priority: Number(body.priority ?? 3),\n  tenant: body.tenant,\n  title: body.title ?? 'Staff task',\n  summary: body.summary ?? '',\n  occurredAt: body.occurredAt\n} }];"
-      }
-    },
-    {
-      "id": "authed",
-      "name": "Authenticated?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        440,
-        0
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "version": 2
-          },
-          "combinator": "and",
-          "conditions": [
-            {
-              "id": "ok",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              },
-              "leftValue": "={{ $json.ok }}"
-            }
-          ]
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CRED__:n8n-inbound",
+          "name": "__CRED__:n8n-inbound"
         }
       }
     },
@@ -69,8 +33,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        660,
-        -120
+        220,
+        0
       ],
       "parameters": {
         "respondWith": "json",
@@ -78,18 +42,16 @@
       }
     },
     {
-      "id": "deny",
-      "name": "Respond 401",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
+      "id": "parse",
+      "name": "Parse event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        660,
-        120
+        440,
+        0
       ],
       "parameters": {
-        "respondWith": "json",
-        "responseCode": 401,
-        "responseBody": "={{ JSON.stringify({ ok: false, error: $json.why }) }}"
+        "jsCode": "// Native Header Auth replaced the HMAC-in-a-Code-node check (Q-04.5): n8n verifies\n// the credential before the workflow even starts, so this node only parses the body.\n// Raw Body stays on (lint rule 14), so parse the bytes; fall back to a pre-parsed body.\nconst raw = $input.first().json.rawBody?.toString('utf8') ?? '';\nlet body = {};\ntry { body = JSON.parse(raw); } catch { body = $input.first().json.body || {}; }\nreturn [{ json: {\n  taskId: body.taskId,\n  type: body.type,\n  priority: Number(body.priority ?? 3),\n  tenant: body.tenant,\n  title: body.title ?? 'Staff task',\n  summary: body.summary ?? '',\n  occurredAt: body.occurredAt,\n} }];"
       }
     },
     {
@@ -98,8 +60,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
       "position": [
-        880,
-        -120
+        660,
+        0
       ],
       "parameters": {
         "rules": {
@@ -158,12 +120,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1100,
-        -260
+        880,
+        -180
       ],
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/notify/staff",
+        "url": "=__URL__:core-api/internal/notify/staff",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ severity: 'P1', mention: true, taskId: $json.taskId, title: $json.title, summary: $json.summary }) }}",
@@ -186,12 +148,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1320,
-        -260
+        1100,
+        -180
       ],
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/notify/sms",
+        "url": "=__URL__:core-api/internal/notify/sms",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ to: 'manager', template: 'p1_escalation', taskId: $json.taskId, summary: $json.summary }) }}",
@@ -214,8 +176,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        1540,
-        -260
+        1320,
+        -180
       ],
       "webhookId": "grace-esc-wait",
       "parameters": {
@@ -229,12 +191,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1760,
-        -260
+        1540,
+        -180
       ],
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/tasks/{{ $json.taskId }}",
+        "url": "=__URL__:core-api/internal/tasks/{{ $json.taskId }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {
@@ -254,8 +216,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        1980,
-        -260
+        1760,
+        -180
       ],
       "parameters": {
         "workflowId": "__WF__:wf-18",
@@ -268,12 +230,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1100,
-        -120
+        880,
+        0
       ],
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/notify/staff",
+        "url": "=__URL__:core-api/internal/notify/staff",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ severity: 'P2', mention: false, taskId: $json.taskId, title: $json.title, summary: $json.summary }) }}",
@@ -296,12 +258,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1100,
-        20
+        880,
+        180
       ],
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.GRACE_CORE_API_URL }}/internal/digest/append",
+        "url": "=__URL__:core-api/internal/digest/append",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ taskId: $json.taskId, title: $json.title, priority: $json.priority }) }}",
@@ -324,36 +286,7 @@
       "main": [
         [
           {
-            "node": "Verify signature",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Verify signature": {
-      "main": [
-        [
-          {
-            "node": "Authenticated?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Authenticated?": {
-      "main": [
-        [
-          {
             "node": "Respond 200",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Respond 401",
             "type": "main",
             "index": 0
           }
@@ -361,6 +294,17 @@
       ]
     },
     "Respond 200": {
+      "main": [
+        [
+          {
+            "node": "Parse event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse event": {
       "main": [
         [
           {

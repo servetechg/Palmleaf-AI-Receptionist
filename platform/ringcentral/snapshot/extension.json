@@ -1,0 +1,362 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3041612036",
+  "id": 3041612036,
+  "extensionNumber": "101",
+  "contact": {
+    "firstName": "Soneth",
+    "lastName": "Zanoria",
+    "company": "PalmLeaf Massage Clinic",
+    "email": "palmleafbiz@gmail.com",
+    "businessPhone": "+17734192727",
+    "mobilePhone": "+17734192727",
+    "businessAddress": {
+      "street": "355 West Dundee Rd.",
+      "city": "Buffalo Grove",
+      "state": "Illinois",
+      "zip": "60089",
+      "country": "United States"
+    },
+    "emailAsLoginName": true,
+    "pronouncedName": {
+      "type": "Recorded",
+      "text": "PalmLeaf Massage Clinic",
+      "prompt": {
+        "id": "5724533036",
+        "contentType": "audio/wav",
+        "contentUri": "https://media.ringcentral.com/restapi/v1.0/account/3041612036/extension/3041612036/greeting/5724533036/content"
+      }
+    }
+  },
+  "roles": [
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/user-role/1",
+      "id": "1",
+      "autoAssigned": true,
+      "displayName": "Super Admin",
+      "siteRestricted": false,
+      "siteCompatible": true
+    }
+  ],
+  "name": "Soneth Zanoria",
+  "type": "User",
+  "status": "Enabled",
+  "departments": [
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/4061311036",
+      "id": "4061311036",
+      "extensionNumber": "5"
+    }
+  ],
+  "serviceFeatures": [
+    {
+      "featureName": "SMS",
+      "enabled": true
+    },
+    {
+      "featureName": "SMSReceiving",
+      "enabled": true
+    },
+    {
+      "featureName": "Pager",
+      "enabled": true
+    },
+    {
+      "featureName": "PagerReceiving",
+      "enabled": true
+    },
+    {
+      "featureName": "Voicemail",
+      "enabled": true
+    },
+    {
+      "featureName": "Fax",
+      "enabled": true
+    },
+    {
+      "featureName": "FaxReceiving",
+      "enabled": true
+    },
+    {
+      "featureName": "DND",
+      "enabled": true
+    },
+    {
+      "featureName": "RingOut",
+      "enabled": true
+    },
+    {
+      "featureName": "InternationalCalling",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "Presence",
+      "enabled": true
+    },
+    {
+      "featureName": "VideoConferencing",
+      "enabled": true
+    },
+    {
+      "featureName": "SalesForce",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "Intercom",
+      "enabled": true
+    },
+    {
+      "featureName": "Paging",
+      "enabled": true
+    },
+    {
+      "featureName": "Conferencing",
+      "enabled": true
+    },
+    {
+      "featureName": "VoipCalling",
+      "enabled": true
+    },
+    {
+      "featureName": "FreeSoftPhoneLines",
+      "enabled": true
+    },
+    {
+      "featureName": "HipaaCompliance",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "CallPark",
+      "enabled": true
+    },
+    {
+      "featureName": "SharedLines",
+      "enabled": true
+    },
+    {
+      "featureName": "OnDemandCallRecording",
+      "enabled": true
+    },
+    {
+      "featureName": "Reports",
+      "enabled": true
+    },
+    {
+      "featureName": "CallForwarding",
+      "enabled": true
+    },
+    {
+      "featureName": "DeveloperPortal",
+      "enabled": true
+    },
+    {
+      "featureName": "EncryptionAtRest",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "BlockedMessageForwarding",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "EmergencyCalling",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "HDVoice",
+      "enabled": true
+    },
+    {
+      "featureName": "SingleExtensionUI",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "CallSupervision",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "VoicemailToText",
+      "enabled": true
+    },
+    {
+      "featureName": "WebPhone",
+      "enabled": true
+    },
+    {
+      "featureName": "RCTeams",
+      "enabled": true
+    },
+    {
+      "featureName": "UserManagement",
+      "enabled": true
+    },
+    {
+      "featureName": "Calendar",
+      "enabled": true
+    },
+    {
+      "featureName": "CallerIdControl",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "AutomaticInboundCallRecording",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "AutomaticOutboundCallRecording",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "AutomaticCallRecordingMute",
+      "enabled": false,
+      "reason": "ExtensionLimitation"
+    },
+    {
+      "featureName": "SoftPhoneUpdate",
+      "enabled": true
+    },
+    {
+      "featureName": "LinkedSoftphoneLines",
+      "enabled": false,
+      "reason": "AccountTypeLimitation"
+    },
+    {
+      "featureName": "CallQualitySurvey",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "AccountFederation",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "MMS",
+      "enabled": true
+    },
+    {
+      "featureName": "CallParkLocations",
+      "enabled": true
+    },
+    {
+      "featureName": "ExternalDirectoryIntegration",
+      "enabled": false,
+      "reason": "AccountTypeLimitation"
+    },
+    {
+      "featureName": "CallSwitch",
+      "enabled": true
+    },
+    {
+      "featureName": "PromoMessage",
+      "enabled": true
+    },
+    {
+      "featureName": "SiteCodes",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "InternationalSMS",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "ConferencingNumber",
+      "enabled": true
+    },
+    {
+      "featureName": "VoipCallingOnMobile",
+      "enabled": true
+    },
+    {
+      "featureName": "DynamicConference",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "ConfigureDelegates",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    },
+    {
+      "featureName": "Archiver",
+      "enabled": false,
+      "reason": "AccountTypeLimitation"
+    },
+    {
+      "featureName": "EmergencyAddressAutoUpdate",
+      "enabled": true
+    },
+    {
+      "featureName": "MobileVoipEmergencyCalling",
+      "enabled": false,
+      "reason": "AccountLimitation"
+    }
+  ],
+  "regionalSettings": {
+    "timezone": {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/timezone/98",
+      "id": "98",
+      "name": "America/Chicago",
+      "description": "Central Time (America/Chicago)",
+      "bias": "-360"
+    },
+    "homeCountry": {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/country/1",
+      "id": "1",
+      "name": "United States",
+      "isoCode": "US",
+      "callingCode": "1"
+    },
+    "language": {
+      "id": "1033",
+      "name": "English (United States)",
+      "localeCode": "en-US"
+    },
+    "greetingLanguage": {
+      "id": "1033",
+      "name": "English (United States)",
+      "localeCode": "en-US"
+    },
+    "formattingLocale": {
+      "id": "1033",
+      "name": "English (United States)",
+      "localeCode": "en-US"
+    },
+    "timeFormat": "12h"
+  },
+  "setupWizardState": "Completed",
+  "permissions": {
+    "admin": {
+      "enabled": true
+    },
+    "internationalCalling": {
+      "enabled": true
+    }
+  },
+  "profileImage": {
+    "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3041612036/profile-image"
+  },
+  "account": {
+    "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036",
+    "id": "3041612036"
+  },
+  "hidden": false,
+  "assignedCountry": {
+    "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/country/1",
+    "id": "1",
+    "name": "United States",
+    "isoCode": "US"
+  },
+  "creationTime": "2023-10-24T16:01:19Z"
+}

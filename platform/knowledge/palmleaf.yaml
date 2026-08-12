@@ -1,0 +1,105 @@
+# PalmLeaf knowledge base. Edit an answer, set approved: true, run `make kb-apply`.
+#
+# Grace only speaks entries with approved: true — an unapproved answer is treated as
+# absent, and she offers a person instead. That is the safety: nothing reaches a caller
+# until someone signs it off.
+#
+# Keep every answer to two short spoken sentences. Write numbers as words ("eight thirty",
+# not "8:30") — this text is read aloud, and digits make speech engines stumble.
+# No URLs, no prices that could drift out of step with the booking system.
+#
+# Sources: client onboarding questionnaire (28 July 2026) and palmleafmassage.com
+# (crawled 8 August 2026). Where the two disagree, the WEBSITE wins — it is what a caller
+# has already read, and quoting them something softer than their published policy is how
+# a dispute starts.
+#
+# ⚠️ ONE KNOWN CONFLICT, resolved toward the website:
+#   Website : a late cancellation is charged "100% of the scheduled service".
+#   Ramon   : the Room Reservation Deposit is forfeited as the cancellation fee.
+#   Ola     : "100% charge for the service".
+# Two of three say full session fee, so that is what Grace quotes. Confirm with PalmLeaf
+# before the first real cancellation — it is the difference between $50 and $115.
+
+- key: hours
+  category: basics
+  approved: true
+  answer: >-
+    We're open every day, eight in the morning to eight thirty at night —
+    seven days a week, holidays included.
+
+- key: location
+  category: basics
+  approved: true
+  answer: >-
+    We're at four hundred West Dundee Road, Unit eight, in Buffalo Grove —
+    right across from Old National Bank, near Kingswood United Methodist Church.
+
+- key: parking
+  category: basics
+  approved: true
+  answer: There's free parking right outside.
+
+- key: contact
+  category: basics
+  approved: true
+  answer: >-
+    The easiest way is right here on this line. You can also find us on our
+    website any time.
+
+- key: services_overview
+  category: services
+  approved: true
+  answer: >-
+    We do therapeutic massage, acupuncture, chiropractic and cryo body sculpting —
+    massage runs sixty, ninety or a hundred twenty minutes. What sounds good?
+
+- key: policies
+  category: policies
+  approved: true
+  answer: >-
+    We ask for forty-eight hours' notice to change or cancel. Inside forty-eight
+    hours, or a no-show, is charged the full session fee.
+
+- key: late_arrival
+  category: policies
+  approved: true
+  answer: >-
+    If you're running late we'll still see you, but the session ends at its original
+    time and the full fee applies — so it's worth giving us a call.
+
+- key: memberships
+  category: memberships
+  approved: true
+  answer: >-
+    Members pay ninety dollars for an hour instead of one fifteen, and one thirty-five
+    for ninety minutes instead of one sixty — there's a one-time forty-nine dollar
+    enrollment, no contract, and you can pause or cancel any time.
+
+- key: providers_general
+  category: team
+  approved: true
+  answer: >-
+    We've got fourteen licensed massage therapists, each with their own style, and
+    everyone's trained for chronic issues and for helping you destress. Anyone in
+    particular you'd like?
+
+- key: intake
+  category: policies
+  approved: true
+  answer: >-
+    New clients fill out a quick intake form beforehand so we don't eat into your
+    session — or come fifteen minutes early and do it here.
+
+- key: services_detail
+  category: services
+  approved: true
+  answer: >-
+    Our therapists do deep tissue, Swedish, prenatal, sports, Thai, myofascial and
+    trigger point work — same price whichever you'd like, just tell your therapist.
+
+- key: payments
+  category: policies
+  approved: true
+  answer: >-
+    For non-members we take full prepayment when you book, by secure link —
+    never card numbers over the phone. Members have a card on file.

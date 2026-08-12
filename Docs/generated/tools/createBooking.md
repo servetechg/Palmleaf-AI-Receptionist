@@ -10,16 +10,21 @@
 
 ## What it does, and when Grace calls it
 
-Book the appointment. Call this only after the caller has chosen a specific time you offered AND you have asked the medical screening question. Pass the slot id exactly as checkAvailability gave it. If they disclosed anything medical, do not call this — call flagMedicalHold and escalate.
+Book the chosen slot — only after the caller picked a specific time you offered AND you asked the screening question this call. Pass slotId exactly as checkAvailability gave it, and bookedForName when the appointment is for someone other than the caller. If anything medical came up, do not call this — flagMedicalHold, then hand over.
 
 ## Parameters
 
 | Parameter | Type / allowed values | Required | Default | What it means |
 |---|---|---|---|---|
+| `bookedForName` | `string`, length 0–60 | no | `""` | First name of the person the appointment is FOR, when it isn't the caller (e.g. booking for a partner). Leave empty when the caller books for themselves. |
+| `contactPreference` | `sms` · `email` · `both` | no | `"sms"` | Where they want their confirmation and any payment link. Ask if unsure. Use 'both' only when they actually gave both a number and an email. |
+| `email` | `string`, length 0–254 | no | `""` | Email address, if they gave one. Spell it back before using it. Leave empty if they did not offer one — never invent or assume an address. |
 | `firstName` | `string`, length 1–60 | **yes** | — | Caller first name as they said it. Do not ask for a surname unless they offer one. |
 | `lastName` | `string`, length 0–60 | no | `""` | — |
 | `medicalScreenPassed` | `boolean` | **yes** | — | Set true ONLY after asking the screening question and hearing a clear no. If they said yes, are unsure, or you did not ask, set false and call flagMedicalHold instead of booking. |
 | `notes` | `string`, length 0–280 | no | `""` | Scheduling preferences only, e.g. "prefers a quieter room". NEVER any health, medical, or diagnostic detail. |
+| `phone` | `string`, pattern `^\+[1-9]\d{7,14}$` | **yes** | — | The caller's mobile number, ONLY as they spoke it aloud on this call. On a web call there is no caller ID, so you must ask. Never use a number from anywhere else and never guess one. |
+| `phoneConfirmed` | `boolean` | **yes** | — | Set true ONLY after you have read the number back digit by digit and the caller confirmed it. If you did not read it back, set false. |
 | `slotId` | `string`, pattern `^[Hh][Oo][Ll][Dd]-[0-9A-Za-z]{3,6}$` | **yes** | — | Slot id exactly as checkAvailability returned it, e.g. hold-7K2. Never invent one. |
 
 Any parameter not listed above is **rejected**, not ignored — the model inventing a field must be a loud error, never silent.

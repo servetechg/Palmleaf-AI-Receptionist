@@ -63,6 +63,20 @@ jobs:
       - name: n8n workflow lint
         run: .venv/bin/python -m grace_platform.n8n.lint
 
+      # The per-tool and per-workflow reference is generated from the code that defines it.
+      # If it is stale, the documentation and the deployed behaviour have silently diverged —
+      # which is the exact failure the generators exist to make impossible.
+      - name: Generated reference is current
+        run: |
+          .venv/bin/python -m grace_platform.docs.gen_tools --check
+          .venv/bin/python -m grace_platform.docs.gen_workflows --check
+
+      # The hand-written planning documents cannot be generated, so they are linted instead:
+      # header block, section numbering, one cross-reference syntax, no heading inside a fence,
+      # and no reference to the superseded stack outside a line explaining the replacement.
+      - name: Document template
+        run: .venv/bin/python -m grace_platform.docs.lint_docs
+
       - name: No secrets committed
         run: |
           if git grep -nEI 'sk_live_|whsec_[A-Za-z0-9]{10,}|xoxb-[A-Za-z0-9-]{10,}|AC[0-9a-f]{32}' \

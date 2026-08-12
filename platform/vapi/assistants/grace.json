@@ -1,35 +1,35 @@
 {
-  "name": "Grace — PalmLeaf",
-
+  "name": "Grace \u2014 PalmLeaf",
   "firstMessage": "<injected from prompts/first-message.txt>",
   "firstMessageMode": "assistant-speaks-first",
-
   "model": {
-    "provider": "anthropic",
-    "model": "claude-sonnet-5",
-    "temperature": 0.3,
-    "maxTokens": 250,
-    "messages": [{ "role": "system", "content": "<injected from prompts/system.md>" }],
+    "provider": "openai",
+    "model": "gpt-4.1-mini",
+    "temperature": 0.6,
+    "maxTokens": 150,
+    "messages": [
+      {
+        "role": "system",
+        "content": "<injected from prompts/system.md>"
+      }
+    ],
     "toolIds": []
   },
-
   "voice": {
-    "provider": "11labs",
-    "voiceId": "sarah",
-    "model": "eleven_turbo_v2_5",
-    "stability": 0.5,
-    "similarityBoost": 0.75,
-    "optimizeStreamingLatency": 3,
-    "chunkPlan": { "enabled": true, "minCharacters": 30 }
+    "provider": "cartesia",
+    "model": "sonic",
+    "voiceId": "a0e99841-438c-4a64-b679-ae501e7d6091",
+    "chunkPlan": {
+      "enabled": true,
+      "minCharacters": 20
+    }
   },
-
   "transcriber": {
     "provider": "deepgram",
     "model": "nova-3",
-    "language": "en-US",
+    "language": "en",
     "smartFormat": true,
     "numerals": true,
-    "endpointing": 180,
     "keywords": [
       "PalmLeaf:2",
       "Vagaro:1",
@@ -37,21 +37,27 @@
       "Buffalo:2",
       "Grove:2",
       "acupuncture:1",
-      "cryo:1"
+      "cryo:1",
+      "Massagebook:1"
     ]
   },
-
   "startSpeakingPlan": {
-    "waitSeconds": 0.4,
-    "smartEndpointingEnabled": true,
+    "waitSeconds": 0.3,
+    "smartEndpointingPlan": {
+      "provider": "livekit",
+      "waitFunction": "2000 / (1 + exp(-10 * (x - 0.5)))"
+    },
     "transcriptionEndpointingPlan": {
-      "onPunctuationSeconds": 0.1,
-      "onNoPunctuationSeconds": 1.2,
-      "onNumberSeconds": 0.6
+      "onPunctuationSeconds": 0.15,
+      "onNoPunctuationSeconds": 1.1,
+      "onNumberSeconds": 0.7
     }
   },
-  "stopSpeakingPlan": { "numWords": 2, "voiceSeconds": 0.2, "backoffSeconds": 1.0 },
-
+  "stopSpeakingPlan": {
+    "numWords": 2,
+    "voiceSeconds": 0.25,
+    "backoffSeconds": 0.8
+  },
   "server": {
     "url": "${GRACE_EVENTS_URL}",
     "timeoutSeconds": 10
@@ -63,19 +69,54 @@
     "tool-calls",
     "transfer-destination-request"
   ],
-
   "maxDurationSeconds": 900,
-  "backgroundSpeechDenoisingPlan": { "smartDenoisingPlan": { "enabled": true } },
-  "endCallPhrases": ["goodbye", "have a great day"],
-
-  "voicemailDetection": { "provider": "vapi" },
-
-  "compliancePlan": { "hipaaEnabled": false, "pciEnabled": false },
-
+  "backgroundSpeechDenoisingPlan": {
+    "smartDenoisingPlan": {
+      "enabled": true
+    }
+  },
+  "endCallPhrases": [
+    "goodbye",
+    "have a great day"
+  ],
+  "voicemailDetection": {
+    "provider": "vapi"
+  },
+  "voicemailMessage": "Hi, this is Grace calling from PalmLeaf Massage and Wellness. Sorry to have missed you — please give us a call back when you have a moment and we'll get you sorted. Thanks!",
+  "endCallMessage": "Thanks for calling PalmLeaf. Take care!",
+  "hooks": [
+    {
+      "name": "idle-caller",
+      "on": "customer.speech.timeout",
+      "options": {
+        "timeoutSeconds": 12,
+        "triggerMaxCount": 2,
+        "triggerResetMode": "onUserSpeech"
+      },
+      "do": [
+        {
+          "type": "say",
+          "exact": [
+            "Are you still there?",
+            "Sorry — I didn't catch that. Are you still with me?"
+          ]
+        }
+      ]
+    }
+  ],
+  "compliancePlan": {
+    "hipaaEnabled": false,
+    "pciEnabled": false
+  },
   "artifactPlan": {
     "recordingEnabled": true,
     "loggingEnabled": true,
-    "transcriptPlan": { "enabled": true, "assistantName": "Grace" },
+    "transcriptPlan": {
+      "enabled": true,
+      "assistantName": "Grace"
+    },
     "structuredOutputIds": []
-  }
+  },
+  "backgroundSound": "office",
+  "firstMessageInterruptionsEnabled": true
 }

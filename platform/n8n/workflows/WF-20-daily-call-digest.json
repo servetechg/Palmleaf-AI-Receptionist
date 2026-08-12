@@ -2,69 +2,44 @@
   "name": "WF-20 Daily Call Digest",
   "nodes": [
     {
-      "id": "cron",
-      "name": "Every morning",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.3,
+      "id": "start",
+      "name": "Called by WF-25",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
       "position": [
         0,
         0
       ],
       "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "days",
-              "triggerAtHour": 7,
-              "triggerAtMinute": 30
-            }
-          ]
-        }
+        "inputSource": "passthrough"
       }
     },
     {
-      "id": "fetch",
-      "name": "Fetch yesterday's calls",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "id": "shape",
+      "name": "Shape the request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         220,
         0
       ],
       "parameters": {
-        "method": "GET",
-        "url": "https://api.vapi.ai/call",
-        "sendQuery": true,
-        "specifyQuery": "keypair",
-        "queryParameters": {
-          "parameters": [
-            {
-              "name": "limit",
-              "value": "1000"
-            },
-            {
-              "name": "createdAtGe",
-              "value": "={{ $now.minus(1, 'day').startOf('day').toISO() }}"
-            },
-            {
-              "name": "createdAtLt",
-              "value": "={{ $now.startOf('day').toISO() }}"
-            }
-          ]
-        },
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {
-          "timeout": 30000
-        }
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "__CRED__:vapi",
-          "name": "__CRED__:vapi"
-        }
-      },
-      "alwaysOutputData": true
+        "jsCode": "// The only lines that differ between reports: the fetch window and page size.\n// The fetch itself lives in WF-24, written once and shared.\nreturn [{ json: {\n  sinceIso: $now.minus({ days: 1 }).startOf('day').toISO(),\n  untilIso: $now.startOf('day').toISO(),\n  limit: '1000',\n} }];"
+      }
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch via WF-24",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "workflowId": "__WF__:wf-24",
+        "options": {}
+      }
     },
     {
       "id": "analyse",
@@ -72,11 +47,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        440,
+        660,
         0
       ],
       "parameters": {
-        "jsCode": "// Summarise yesterday's calls into one row. Reads Vapi's call records directly \u2014\n// no Core API involved, so this works today.\nconst calls = $input.all().map(i => i.json).flat().filter(c => c && c.id);\n\nconst outcome = c => (c.analysis && c.analysis.structuredData) || {};\nconst secs = c => c.startedAt && c.endedAt\n  ? (new Date(c.endedAt) - new Date(c.startedAt)) / 1000 : 0;\n\nconst total = calls.length;\nconst booked = calls.filter(c => outcome(c).booked === true).length;\nconst escalated = calls.filter(c => outcome(c).escalated === true).length;\nconst medicalHolds = calls.filter(c => outcome(c).medicalHold === true).length;\nconst durations = calls.map(secs).filter(s => s > 0);\nconst avg = durations.length\n  ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;\n\n// Containment = handled without a human. The headline number for an AI receptionist.\nconst containment = total ? Math.round(((total - escalated) / total) * 100) : 0;\n\nconst d = new Date(); d.setDate(d.getDate() - 1);\n\nreturn [{ json: {\n  day: d.toISOString().slice(0, 10),\n  total_calls: total,\n  booked,\n  escalated,\n  medical_holds: medicalHolds,\n  avg_duration_seconds: avg,\n  containment_pct: containment,\n} }];"
+        "jsCode": "// Aggregate a day of normalised calls (fetched via WF-24) into one row.\n// A quiet day still produces a zero row \u2014 a missing report is ambiguous, a zero row is not.\nconst calls = ($input.first().json || {}).calls || [];\nconst total = calls.length;\nconst booked = calls.filter(c => c.booked).length;\nconst escalated = calls.filter(c => c.escalated).length;\nconst medicalHolds = calls.filter(c => c.medicalHold).length;\nconst durations = calls.map(c => c.durationSeconds).filter(s => s > 0);\nconst avg = durations.length\n  ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 0;\n\n// Containment = handled without a human. The headline number for an AI receptionist.\nconst containment = total ? Math.round(((total - escalated) / total) * 100) : 0;\n\nconst d = new Date(); d.setDate(d.getDate() - 1);\n\nreturn [{ json: {\n  day: d.toISOString().slice(0, 10),\n  total_calls: total,\n  booked,\n  escalated,\n  medical_holds: medicalHolds,\n  avg_duration_seconds: avg,\n  containment_pct: containment,\n} }];"
       }
     },
     {
@@ -85,7 +60,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        660,
+        880,
         0
       ],
       "parameters": {
@@ -176,12 +151,39 @@
       }
     },
     {
+      "id": "shape-email",
+      "name": "Shape the email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Shape the email sent via WF-26 — one line per figure already computed above.\nreturn [{ json: {\n  subject: `PalmLeaf daily call digest — ${$json.day}`,\n  body: `Total calls: ${$json.total_calls}\\nBooked: ${$json.booked}\\nEscalated: ${$json.escalated}\\nMedical holds: ${$json.medical_holds}\\nAverage duration: ${$json.avg_duration_seconds}s\\nContainment: ${$json.containment_pct}%`,\n} }];"
+      }
+    },
+    {
+      "id": "email",
+      "name": "Email via WF-26",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "workflowId": "__WF__:wf-26",
+        "options": {}
+      }
+    },
+    {
       "id": "pg",
       "name": "Archive to Postgres",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        880,
+        1540,
         0
       ],
       "disabled": true,
@@ -285,18 +287,29 @@
     }
   ],
   "connections": {
-    "Every morning": {
+    "Called by WF-25": {
       "main": [
         [
           {
-            "node": "Fetch yesterday's calls",
+            "node": "Shape the request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Fetch yesterday's calls": {
+    "Shape the request": {
+      "main": [
+        [
+          {
+            "node": "Fetch via WF-24",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch via WF-24": {
       "main": [
         [
           {
@@ -322,7 +335,23 @@
       "main": [
         [
           {
+            "node": "Shape the email",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Archive to Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape the email": {
+      "main": [
+        [
+          {
+            "node": "Email via WF-26",
             "type": "main",
             "index": 0
           }
@@ -331,7 +360,6 @@
     }
   },
   "settings": {
-    "errorWorkflow": "__WF__:wf-00",
-    "timezone": "America/Chicago"
+    "errorWorkflow": "__WF__:wf-00"
   }
 }

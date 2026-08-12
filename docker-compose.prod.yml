@@ -1,0 +1,47 @@
+# Hostinger VPS — Postgres and the tool server on ONE box.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# This is the whole deployment. There is no second host and no second vendor: the tool
+# server is another process beside the database, which is why running it costs nothing
+# beyond the VPS that has to exist for Postgres anyway (06-platform-setup.md §6.1).
+#
+# Vapi POSTs to https://<your-domain>/vapi/tools during a call, so this box needs a
+# permanent address. Put a reverse proxy (Caddy or nginx) in front for TLS — Vapi will
+# not call a plain-http endpoint.
+services:
+  postgres:
+    # Not published to the internet. Only the api service on this box talks to it.
+    ports: !override []
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      GRACE_DATABASE_URL: postgresql://grace:${POSTGRES_PASSWORD:-grace-dev}@postgres:5432/grace
+      GRACE_TOOL_DEADLINE_MS: "2500"
+      GRACE_INTERNAL_API_TOKEN: ${GRACE_INTERNAL_API_TOKEN:?set this — n8n uses it to reach /internal/*}
+    ports:
+      - "127.0.0.1:8080:8080"   # reverse proxy terminates TLS and forwards here
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Outbound notifications, off the call path on purpose (see grace_workers/notify.py).
+  # Same image, different command — nothing extra to build or deploy.
+  notify:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "grace_workers.notify"]
+    environment:
+      GRACE_DATABASE_URL: postgresql://grace:${POSTGRES_PASSWORD:-grace-dev}@postgres:5432/grace
+      GRACE_N8N_ESCALATION_URL: ${GRACE_N8N_ESCALATION_URL:?WF-12 webhook URL — staff alerts go nowhere without it}
+      GRACE_N8N_INBOUND_TOKEN: ${GRACE_N8N_INBOUND_TOKEN:?the n8n-inbound header-auth value}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped

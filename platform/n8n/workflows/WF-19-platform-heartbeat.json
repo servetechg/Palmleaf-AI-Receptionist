@@ -1,0 +1,295 @@
+{
+  "name": "WF-19 Platform Heartbeat",
+  "nodes": [
+    {
+      "id": "cron",
+      "name": "Every 15 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "probe",
+      "name": "Probe Vapi",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.vapi.ai/call",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 15000,
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "__CRED__:vapi",
+          "name": "__CRED__:vapi"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "beat",
+      "name": "Record the beat",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Write one heartbeat row, and notice if the previous one is missing.\n//\n// HONEST LIMIT: a heartbeat inside n8n cannot alert while n8n is fully down, because\n// nothing runs to raise the alarm. What it CAN do is (a) prove liveness continuously,\n// (b) detect that a window was missed once n8n comes back, and (c) catch a Vapi outage\n// or a revoked key within 15 minutes — which today has no detection at all.\n// A true dead-man's switch needs a watchdog outside n8n; recorded as Q-04.4.\nconst EXPECTED_GAP_MIN = 15;\nconst ALERT_GAP_MIN = 60;\n\nconst store = $getWorkflowStaticData('global');\nconst now = new Date();\nconst prevIso = store.lastBeatAt || null;\nconst gapMin = prevIso\n  ? Math.round((now - new Date(prevIso)) / 60000)\n  : null;\n\n// Did the platform miss its window? Null on the very first run — not a fault.\nconst missed = gapMin !== null && gapMin > ALERT_GAP_MIN;\n\n// Vapi reachability. neverError + fullResponse means a 4xx/5xx arrives here as data\n// rather than throwing, so a Vapi outage is recorded rather than losing the heartbeat.\nconst res = $input.first().json || {};\nconst code = Number(res.statusCode || 0);\nconst vapiOk = code >= 200 && code < 300;\n\nconst reasons = [];\nif (missed) reasons.push('no heartbeat for ' + gapMin + ' min (expected every ' + EXPECTED_GAP_MIN + ')');\nif (!vapiOk) reasons.push('Vapi unreachable or rejected the key (HTTP ' + (code || 'no response') + ')');\n\nstore.lastBeatAt = now.toISOString();\n\nreturn [{ json: {\n  beat_at: now.toISOString(),\n  gap_minutes: gapMin === null ? 0 : gapMin,\n  vapi_ok: vapiOk,\n  healthy: !missed && vapiOk,\n  reasons: reasons.join('; '),\n} }];"
+      }
+    },
+    {
+      "id": "store",
+      "name": "Save heartbeat",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "platform_heartbeat"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "beat_at": "={{ $json.beat_at }}",
+            "gap_minutes": "={{ $json.gap_minutes }}",
+            "vapi_ok": "={{ $json.vapi_ok }}",
+            "healthy": "={{ $json.healthy }}",
+            "reasons": "={{ $json.reasons }}"
+          },
+          "schema": [
+            {
+              "id": "beat_at",
+              "displayName": "beat_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "gap_minutes",
+              "displayName": "gap_minutes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "vapi_ok",
+              "displayName": "vapi_ok",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "healthy",
+              "displayName": "healthy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reasons",
+              "displayName": "reasons",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "pg",
+      "name": "Archive to Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        880,
+        0
+      ],
+      "disabled": true,
+      "parameters": {
+        "operation": "insert",
+        "schema": {
+          "__rl": true,
+          "mode": "name",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "name",
+          "value": "platform_heartbeat"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "beat_at": "={{ $json.beat_at }}",
+            "gap_minutes": "={{ $json.gap_minutes }}",
+            "vapi_ok": "={{ $json.vapi_ok }}",
+            "healthy": "={{ $json.healthy }}",
+            "reasons": "={{ $json.reasons }}"
+          },
+          "schema": [
+            {
+              "id": "beat_at",
+              "displayName": "beat_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "gap_minutes",
+              "displayName": "gap_minutes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "vapi_ok",
+              "displayName": "vapi_ok",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "healthy",
+              "displayName": "healthy",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reasons",
+              "displayName": "reasons",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "__CRED__:postgres",
+          "name": "__CRED__:postgres"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every 15 minutes": {
+      "main": [
+        [
+          {
+            "node": "Probe Vapi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Probe Vapi": {
+      "main": [
+        [
+          {
+            "node": "Record the beat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record the beat": {
+      "main": [
+        [
+          {
+            "node": "Save heartbeat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save heartbeat": {
+      "main": [
+        [
+          {
+            "node": "Archive to Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "__WF__:wf-00",
+    "timezone": "America/Chicago"
+  }
+}

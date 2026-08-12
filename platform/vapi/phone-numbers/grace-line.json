@@ -1,0 +1,11 @@
+{
+  "provider": "vapi",
+  "name": "Grace line (dev)",
+  "numberDesiredAreaCode": "651",
+  "assistantId": "${GRACE_ASSISTANT_ID}",
+  "fallbackDestination": {
+    "type": "number",
+    "number": "${GRACE_FRONT_DESK_NUMBER}",
+    "message": "Connecting you to the front desk."
+  }
+}

@@ -10,7 +10,7 @@
 
 ## What it does, and when Grace calls it
 
-Look up the caller by the number they are calling from, so you can greet them by name and know if they are a member. Call this early. It tells you IF they are a member but NOT what members pay — always call getServicesAndPricing for any price.
+Look up the caller by the number they're calling from — do it early in every call, silently. It tells you their name, whether they're a member, and whether they already have an upcoming booking (vital when someone calls back after being cut off). It never tells you prices — getServicesAndPricing does that. Never ask a caller for a different number to look up.
 
 ## Parameters
 

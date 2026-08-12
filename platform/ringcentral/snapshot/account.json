@@ -1,0 +1,96 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036",
+  "id": 3041612036,
+  "serviceInfo": {
+    "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/service-info",
+    "brand": {
+      "id": "1210",
+      "name": "RingCentral",
+      "homeCountry": {
+        "id": "1",
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/country/1",
+        "name": "United States",
+        "isoCode": "US",
+        "callingCode": "1"
+      }
+    },
+    "servicePlan": {
+      "id": "4999",
+      "name": "RingEX Core™",
+      "edition": "Core"
+    },
+    "billingPlan": {
+      "id": "999",
+      "name": "Active [NBS]",
+      "durationUnit": "Month",
+      "duration": 0,
+      "type": "Regular",
+      "includedPhoneLines": 0
+    },
+    "contractedCountry": {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/country/1",
+      "id": "1",
+      "name": "United States",
+      "isoCode": "US"
+    }
+  },
+  "operator": {
+    "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3041612036",
+    "id": 3041612036,
+    "extensionNumber": "101"
+  },
+  "mainNumber": "+18479614800",
+  "status": "Confirmed",
+  "signupInfo": {
+    "tosAccepted": true,
+    "marketingAccepted": false,
+    "creationTime": "2023-10-24T16:01:27Z"
+  },
+  "setupWizardState": "Completed",
+  "regionalSettings": {
+    "timezone": {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/timezone/98",
+      "id": "98",
+      "name": "America/Chicago",
+      "description": "Central Time (America/Chicago)",
+      "bias": "-360"
+    },
+    "homeCountry": {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/country/1",
+      "id": "1",
+      "name": "United States"
+    },
+    "language": {
+      "id": "1033",
+      "name": "English (United States)",
+      "localeCode": "en-US"
+    },
+    "greetingLanguage": {
+      "id": "1033",
+      "name": "English (United States)",
+      "localeCode": "en-US"
+    },
+    "formattingLocale": {
+      "id": "1033",
+      "name": "English (United States)",
+      "localeCode": "en-US"
+    },
+    "timeFormat": "12h",
+    "currency": {
+      "id": 1,
+      "code": "USD",
+      "name": "United States Dollars",
+      "symbol": "$",
+      "minorSymbol": "¢"
+    }
+  },
+  "federated": false,
+  "bsid": "3696052002|3694595002",
+  "limits": {
+    "freeSoftPhoneLinesPerExtension": 1,
+    "meetingSize": 100,
+    "maxMonitoredExtensionsPerUser": 100,
+    "maxExtensionNumberLength": 5,
+    "cloudRecordingStorage": 0
+  }
+}

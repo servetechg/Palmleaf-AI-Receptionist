@@ -1,0 +1,22 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/business-hours-rule",
+  "id": "business-hours-rule",
+  "type": "BusinessHours",
+  "enabled": true,
+  "schedule": {
+    "ref": "BusinessHours"
+  },
+  "greetings": [
+    {
+      "type": "Company",
+      "custom": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/greeting/369465037",
+        "id": "369465037"
+      }
+    }
+  ],
+  "callHandlingAction": "Bypass",
+  "extension": {
+    "id": "3226354036"
+  }
+}

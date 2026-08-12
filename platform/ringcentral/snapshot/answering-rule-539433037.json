@@ -1,0 +1,59 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/answering-rule/539433037",
+  "id": "539433037",
+  "type": "Custom",
+  "name": "2nd Shift Sched (Weekdays)",
+  "enabled": true,
+  "schedule": {
+    "weeklyRanges": {
+      "monday": [
+        {
+          "from": "17:00",
+          "to": "20:30"
+        }
+      ],
+      "tuesday": [
+        {
+          "from": "17:00",
+          "to": "20:30"
+        }
+      ],
+      "wednesday": [
+        {
+          "from": "17:00",
+          "to": "20:30"
+        }
+      ],
+      "thursday": [
+        {
+          "from": "17:00",
+          "to": "20:30"
+        }
+      ],
+      "friday": [
+        {
+          "from": "17:00",
+          "to": "20:30"
+        }
+      ]
+    }
+  },
+  "calledNumbers": [
+    {
+      "phoneNumber": "+18479614800"
+    }
+  ],
+  "greetings": [
+    {
+      "type": "Company",
+      "custom": {
+        "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/greeting/369465037",
+        "id": "369465037"
+      }
+    }
+  ],
+  "callHandlingAction": "Bypass",
+  "extension": {
+    "id": "4093004036"
+  }
+}

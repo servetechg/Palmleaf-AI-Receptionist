@@ -1,0 +1,58 @@
+{
+  "name": "WF-26 Send Report Email",
+  "nodes": [
+    {
+      "id": "start",
+      "name": "Called by report",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "send",
+      "name": "Send email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "fromEmail": "grace@palmleafmassage.com",
+        "toEmail": "=__EMAIL__:reports-to",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "text",
+        "text": "={{ $json.body }}",
+        "options": {}
+      },
+      "credentials": {
+        "smtp": {
+          "id": "__CRED__:smtp",
+          "name": "__CRED__:smtp"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Called by report": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "__WF__:wf-00"
+  }
+}

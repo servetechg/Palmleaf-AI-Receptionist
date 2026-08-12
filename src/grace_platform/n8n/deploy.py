@@ -1,4 +1,4 @@
-"""n8n config-as-code deploy against a single Cloud instance (doc 09 §6.3, ADR-0013).
+"""n8n config-as-code deploy against a single Cloud instance (04-n8n-layer §6.3, ADR-0013).
 
     python -m grace_platform.n8n.deploy --env dev --diff
     python -m grace_platform.n8n.deploy --env dev --apply
@@ -27,13 +27,55 @@ CREDENTIAL_NAMES: dict[str, dict[str, str]] = {
     # Present so a disabled node's placeholder resolves if the credential ever appears;
     # the node stays off until someone enables it deliberately.
     "postgres": {"dev": "PalmLeaf Postgres (dev)", "prod": "PalmLeaf Postgres (prod)"},
-    # Only one. n8n holds no third-party credentials — every notification goes through
-    # Core API's /internal/notify/*, so 10DLC and opt-out enforcement cannot be bypassed
-    # (doc 09 §3.4). Slack is not in scope; if adopted it becomes a Core API channel.
+    # n8n holds no notification credentials — every staff notification goes through
+    # Core API's /internal/notify/*, so 10DLC and opt-out enforcement live in one place
+    # and cannot be bypassed by adding a node to a canvas (04-n8n-layer.md §3.4).
     "core-api": {"dev": "PalmLeaf Core API (dev)", "prod": "PalmLeaf Core API (prod)"},
+    # Inbound auth for worker → n8n. n8n's Webhook node verifies a Header Auth credential
+    # natively, which works on Cloud — unlike verifying an HMAC inside a Code node, which
+    # cannot read the secret at all (Q-04.5, resolved 2026-08-05). WF-12 and WF-17 both use this.
+    "n8n-inbound": {"dev": "PalmLeaf n8n Inbound (dev)", "prod": "PalmLeaf n8n Inbound (prod)"},
+    # Outbound email for the nightly report. Deferred with Vagaro/RingCentral access.
+    "smtp": {"dev": "PalmLeaf Email (dev)", "prod": "PalmLeaf Email (prod)"},
 }
 
-WORKFLOW_ALIASES: dict[str, str] = {"wf-00": "WF-00", "wf-12": "WF-12", "wf-18": "WF-18"}
+_WF_ALIAS = re.compile(r"^wf-(\d+)$")
+
+
+def _alias_prefix(alias: str) -> str | None:
+    """ "wf-23" -> "WF-23". Validated, not looked up — every real alias has this exact shape."""
+    m = _WF_ALIAS.match(alias)
+    return f"WF-{m.group(1)}" if m else None
+
+
+#: Base URLs a workflow needs, resolved from the environment AT DEPLOY TIME.
+#:
+#: They cannot be read at runtime with ``$env``: n8n Cloud blocks environment access inside
+#: nodes (``N8N_BLOCK_ENV_ACCESS_IN_NODE`` defaults on), so an expression like
+#: ``{{ $env.GRACE_CORE_API_URL }}`` fails with "access to env vars denied" on every execution.
+#: Verified against the live instance on 2026-08-04, where it was silently breaking WF-00 —
+#: the global error handler — so no workflow failure was being reported at all.
+URL_VARS: dict[str, str] = {
+    "core-api": "GRACE_CORE_API_URL",
+    # Secondary fan-out consumers (WF-17). Endpoints unknown until the client names them;
+    # both nodes ship disabled, so an unset value cannot reach anything.
+    "crm": "GRACE_CRM_WEBHOOK_URL",
+    "marketing": "GRACE_MARKETING_WEBHOOK_URL",
+}
+
+#: Obvious, non-routable placeholder. Core API does not exist yet, so a deploy must not be
+#: blocked by its URL being unset — but the value must never look like it might work.
+URL_UNSET = "https://core-api.not-built.invalid"
+
+#: Report recipients, resolved from the environment AT DEPLOY TIME — same reason as URL_VARS
+#: (n8n Cloud blocks $env inside nodes). Deliberately NOT given a safe-fallback constant like
+#: URL_UNSET: an unreachable URL 404s harmlessly, but a wrong email address either bounces
+#: somewhere unintended or silently reaches nobody. An unset recipient blocks the deploy of
+#: whichever workflow needs it, exactly like an unresolved credential — that is the correct
+#: failure mode for a real-world side effect with no safe placeholder value.
+EMAIL_VARS: dict[str, str] = {
+    "reports-to": "GRACE_REPORTS_EMAIL_TO",
+}
 
 _WF_REF = re.compile(r"__WF__:([a-z0-9-]+)")
 _WF_NUM = re.compile(r"(WF-\d+)")
@@ -44,18 +86,58 @@ def dependencies_of(wf: dict[str, Any]) -> list[str]:
     return sorted(set(_WF_REF.findall(json.dumps(wf))))
 
 
+def in_dependency_order(
+    local: list[tuple[str, dict[str, Any]]],
+) -> list[tuple[str, dict[str, Any]]]:
+    """Sub-workflows before their callers.
+
+    n8n rejects the **PUT itself** — not merely the activation — when a node references an
+    unpublished sub-workflow: *"Cannot publish workflow: Node X references workflow Y which is
+    not published."* So a caller has to be written and published after everything it calls,
+    which alphabetical file order does not give (WF-07 calls WF-23).
+    """
+    by_alias: dict[str, tuple[str, dict[str, Any]]] = {}
+    for entry in local:
+        m = _WF_NUM.match(str(entry[1]["name"]))
+        if m:
+            by_alias[m.group(1).lower()] = entry
+
+    ordered: list[tuple[str, dict[str, Any]]] = []
+    placed: set[str] = set()
+
+    def visit(entry: tuple[str, dict[str, Any]], stack: set[str]) -> None:
+        name = entry[0]
+        if name in placed or name in stack:
+            return  # already placed, or a cycle — emit in the order found rather than looping
+        stack.add(name)
+        for dep in dependencies_of(entry[1]):
+            target = by_alias.get(dep)
+            if target is not None and target[0] != name:
+                visit(target, stack)
+        stack.discard(name)
+        placed.add(name)
+        ordered.append(entry)
+
+    for entry in local:
+        visit(entry, set())
+    return ordered
+
+
 def render(
     file: str,
     wf: dict[str, Any],
     env: str,
     cred_ids: dict[str, str],
     workflow_ids: dict[str, str],
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     """Resolves placeholders and applies the environment prefix.
+
+    Returns ``None`` when the workflow is blocked on configuration the operator has not
+    supplied yet — the caller skips it and continues with the rest.
 
     An unresolved placeholder is a HARD FAILURE. n8n will not complain — it accepts the
     workflow, activates it, and then throws ``CredentialNotFoundError`` on the first
-    execution, which is the worst possible time to find out (doc 09 §6.2).
+    execution, which is the worst possible time to find out (04-n8n-layer §6.2).
     """
     unresolved: list[str] = []
 
@@ -91,9 +173,28 @@ def render(
             # Reached only if a placeholder appears outside a credentials object.
             unresolved.append(f'stray credential placeholder "{v}"')
             return v
+        if "__URL__:" in v:
+            # Usually "__URL__:core-api/internal/notify/ops" — resolve the alias, keep the path.
+            for url_alias, url_var in URL_VARS.items():
+                token = f"__URL__:{url_alias}"
+                if token in v:
+                    return v.replace(token, os.environ.get(url_var) or URL_UNSET)
+            unresolved.append(f'url placeholder "{v}" has no mapping')
+            return v
+        if "__EMAIL__:" in v:
+            for email_alias, email_var in EMAIL_VARS.items():
+                token = f"__EMAIL__:{email_alias}"
+                if token in v:
+                    val = os.environ.get(email_var)
+                    if not val:
+                        unresolved.append(f'email "{v}" — set {email_var}')
+                        return v
+                    return v.replace(token, val)
+            unresolved.append(f'email placeholder "{v}" has no mapping')
+            return v
         if v.startswith("__WF__:"):
             alias = v[len("__WF__:") :]
-            prefix = WORKFLOW_ALIASES.get(alias)
+            prefix = _alias_prefix(alias)
             wf_id = workflow_ids.get(prefix) if prefix else None
             if not wf_id:
                 unresolved.append(f'workflow "{alias}" → {prefix or "(no mapping)"}')
@@ -128,15 +229,22 @@ def render(
     settings = walk(wf.get("settings", {}))
 
     if unresolved:
-        print(f"\n✗ {file}: unresolved placeholder(s):", file=sys.stderr)
+        # Blocked on configuration, not broken. Returning None makes the caller SKIP this
+        # workflow — never create it, never activate it — while the rest of the set deploys.
+        #
+        # Aborting the whole run instead (the previous behaviour) meant one credential the
+        # operator had not created yet held back every other workflow, which is the wrong
+        # trade in a phase where several integrations are deliberately waiting on access.
+        # The guarantee that matters is preserved: a workflow that would throw on its first
+        # execution is still never published.
+        print(f"\n  ⚠ SKIPPED {file} — blocked on configuration:", file=sys.stderr)
         for u in unresolved:
-            print(f"    {u}", file=sys.stderr)
+            print(f"      {u}", file=sys.stderr)
         print(
-            "\n  n8n would accept this workflow and then throw on its first execution.\n"
-            "  Create the credential in the n8n UI (see credentials.example.json) and retry.\n",
+            "      create it in the n8n UI (see credentials.example.json), then re-run\n",
             file=sys.stderr,
         )
-        sys.exit(1)
+        return None
 
     # PUT body must be EXACTLY these four keys — the schema is additionalProperties:false.
     return {
@@ -145,6 +253,31 @@ def render(
         "connections": wf["connections"],
         "settings": settings,
     }
+
+
+def comparable(remote_nodes: list[Any], local_nodes: list[Any]) -> list[Any]:
+    """Remote nodes, with server-assigned fields we never declared removed.
+
+    n8n mints a ``webhookId`` on save for some node types even when the committed file has
+    none. Comparing raw then reports a difference that **can never be resolved** — the same
+    non-converging-diff failure the credential-name bug caused, and it is why WF-07 stayed
+    permanently "changed" after its first deploy.
+
+    A ``webhookId`` the local file *does* declare is preserved and compared: dropping those
+    would change a live webhook URL, which is exactly what must not happen.
+    """
+    by_name = {n.get("name"): n for n in local_nodes if isinstance(n, dict)}
+    out: list[Any] = []
+    for node in remote_nodes:
+        if not isinstance(node, dict):
+            out.append(node)
+            continue
+        local = by_name.get(node.get("name"), {})
+        cleaned = dict(node)
+        if "webhookId" not in local:
+            cleaned.pop("webhookId", None)
+        out.append(cleaned)
+    return out
 
 
 def main() -> int:
@@ -179,12 +312,17 @@ def main() -> int:
             if m:
                 workflow_ids[m.group(1)] = str(w["id"])
 
-        local = [(p.name, json.loads(p.read_text("utf-8"))) for p in sorted(DIR.glob("*.json"))]
+        local = in_dependency_order(
+            [(p.name, json.loads(p.read_text("utf-8"))) for p in sorted(DIR.glob("*.json"))]
+        )
+        blocked: list[str] = []
         resolved_tag_ids = [tag_ids[t] for t in managed_tags if t in tag_ids]
 
         # n8n refuses to publish a workflow whose sub-workflows are not yet published, so
-        # activation has to happen in dependency order.
+        # activation has to happen in dependency order. `local` is already sorted that way;
+        # `pending` now only carries the reconcile-the-inactive pass below.
         pending: list[tuple[str, str, list[str]]] = []
+        done_now: set[str] = set()
 
         # Create everything first so __WF__ cross-references can resolve.
         if apply:
@@ -192,6 +330,8 @@ def main() -> int:
                 target = f"[{env}] {wf['name']}"
                 if target in by_name:
                     continue
+                if render(_file, wf, env, cred_ids, workflow_ids) is None:
+                    continue  # blocked on configuration — do not create a half-built shell
                 created = client.create_workflow(
                     {"name": target, "nodes": [], "connections": {}, "settings": {}}
                 )
@@ -210,17 +350,28 @@ def main() -> int:
             target = f"[{env}] {wf['name']}"
             remote = by_name.get(target)
             body = render(file, wf, env, cred_ids, workflow_ids)
+            if body is None:
+                blocked.append(target)
+                continue
 
             if remote is None:
                 print(f"  + workflow {target} (would create)")
                 changes += 1
                 continue
 
-            same = json.dumps(remote.get("nodes", [])) == json.dumps(body["nodes"]) and json.dumps(
-                remote.get("connections", {})
-            ) == json.dumps(body["connections"])
+            same = json.dumps(comparable(remote.get("nodes", []), body["nodes"])) == json.dumps(
+                body["nodes"]
+            ) and json.dumps(remote.get("connections", {})) == json.dumps(body["connections"])
             if same:
                 print(f"  = workflow {target}")
+                # An unchanged workflow can still be INACTIVE (an earlier run aborting
+                # part-way is enough). It must be published here, in dependency order — a
+                # changed caller later in this loop would otherwise fail its PUT against an
+                # unpublished target, and die before the reconcile pass below could fix it.
+                if apply and not remote.get("active"):
+                    route = client.activate(str(remote["id"]))
+                    done_now.add(str(remote["id"]))
+                    print(f"      ▶ was deployed but inactive — activated via /{route}")
                 continue
 
             changes += 1
@@ -229,8 +380,27 @@ def main() -> int:
                 continue
             client.update_workflow(str(remote["id"]), body)
             client.set_tags(str(remote["id"]), resolved_tag_ids)
-            pending.append((str(remote["id"]), target, dependencies_of(wf)))
             print("      updated and tagged")
+            # Publish NOW, not in a later pass: the next workflow in this loop may reference
+            # this one, and n8n refuses to write a caller whose target is still unpublished.
+            route = client.activate(str(remote["id"]))
+            done_now.add(str(remote["id"]))
+            print(f"      ▶ activated via /{route}")
+
+        # Reconcile activation, not just changes. A workflow whose definition already matches
+        # is reported "=" and never queued above — so one that was created but not activated
+        # (an earlier run aborting part-way is enough) would stay inactive forever, silently.
+        # Deployed and running are different states; only the second one does any work.
+        if apply:
+            queued = {wf_id for wf_id, _label, _deps in pending} | done_now
+            for _file, wf in local:
+                target = f"[{env}] {wf['name']}"
+                remote = by_name.get(target)
+                if remote is None or target in blocked or str(remote["id"]) in queued:
+                    continue
+                if not remote.get("active"):
+                    pending.append((str(remote["id"]), target, dependencies_of(wf)))
+                    print(f"  ↑ {target} is deployed but inactive — activating")
 
         # Activate in dependency order: a referenced sub-workflow must be published first.
         if apply and pending:
@@ -265,7 +435,12 @@ def main() -> int:
 
     print()
     if apply:
-        print(f"✓ applied — {changes} change(s)\n")
+        if blocked:
+            print(f"\n  {len(blocked)} workflow(s) waiting on configuration, not deployed:")
+            for b in blocked:
+                print(f"    · {b}")
+            print("  Everything else deployed. Create the credential, re-run, and they join in.")
+        print(f"\n✓ applied — {changes} change(s)\n")
         return 0
     if changes == 0:
         print("✓ no drift\n")

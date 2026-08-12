@@ -2,65 +2,44 @@
   "name": "WF-22 Call Quality Alert",
   "nodes": [
     {
-      "id": "cron",
-      "name": "Hourly",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.3,
+      "id": "start",
+      "name": "Called by WF-25",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
       "position": [
         0,
         0
       ],
       "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "hours",
-              "hoursInterval": 1,
-              "triggerAtMinute": 7
-            }
-          ]
-        }
+        "inputSource": "passthrough"
       }
     },
     {
-      "id": "fetch",
-      "name": "Fetch recent calls",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "id": "shape",
+      "name": "Shape the request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         220,
         0
       ],
       "parameters": {
-        "method": "GET",
-        "url": "https://api.vapi.ai/call",
-        "sendQuery": true,
-        "specifyQuery": "keypair",
-        "queryParameters": {
-          "parameters": [
-            {
-              "name": "limit",
-              "value": "200"
-            },
-            {
-              "name": "createdAtGe",
-              "value": "={{ $now.minus(1, 'hour').toISO() }}"
-            }
-          ]
-        },
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "options": {
-          "timeout": 30000
-        }
-      },
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "__CRED__:vapi",
-          "name": "__CRED__:vapi"
-        }
-      },
-      "alwaysOutputData": true
+        "jsCode": "// The only lines that differ between reports: the fetch window and page size.\n// The fetch itself lives in WF-24, written once and shared.\nreturn [{ json: {\n  sinceIso: $now.minus({ hours: 1 }).toISO(),\n  untilIso: $now.toISO(),\n  limit: '200',\n} }];"
+      }
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch via WF-24",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "workflowId": "__WF__:wf-24",
+        "options": {}
+      }
     },
     {
       "id": "flag",
@@ -68,11 +47,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        440,
+        660,
         0
       ],
       "parameters": {
-        "jsCode": "// Flag calls worth a human look. Three signals, each meaning something different:\n//   error        \u2014 the call broke; a caller heard something wrong\n//   very short   \u2014 under 15s usually means Grace failed to engage at all\n//   escalated    \u2014 she handed off; fine occasionally, a pattern if frequent\nconst calls = $input.all().map(i => i.json).flat().filter(c => c && c.id);\n\nconst flagged = [];\nfor (const c of calls) {\n  const o = (c.analysis && c.analysis.structuredData) || {};\n  const dur = c.startedAt && c.endedAt\n    ? (new Date(c.endedAt) - new Date(c.startedAt)) / 1000 : 0;\n  const reasons = [];\n\n  const ended = String(c.endedReason || '');\n  if (/error|failed|pipeline/i.test(ended)) reasons.push('ended in error: ' + ended);\n  if (dur > 0 && dur < 15) reasons.push('under 15 seconds');\n  if (o.escalated === true) reasons.push('escalated to a person');\n\n  if (reasons.length) {\n    flagged.push({ json: {\n      detected_at: new Date().toISOString(),\n      call_id: c.id,\n      reasons: reasons.join('; '),\n      duration_seconds: Math.round(dur),\n      recording_url: (c.artifact && c.artifact.recordingUrl) || '',\n    } });\n  }\n}\n\n// No output when nothing is wrong \u2014 an empty run is the good outcome.\nreturn flagged;"
+        "jsCode": "// Flag calls worth a human look. Three signals, each meaning something different:\n//   error        \u2014 the call broke; a caller heard something wrong\n//   very short   \u2014 under 15s usually means Grace failed to engage at all\n//   escalated    \u2014 she handed off; fine occasionally, a pattern if frequent\nconst calls = ($input.first().json || {}).calls || [];\n\nconst flagged = [];\nfor (const c of calls) {\n  const reasons = [];\n\n  if (/error|failed|pipeline/i.test(c.endedReason)) reasons.push('ended in error: ' + c.endedReason);\n  if (c.durationSeconds > 0 && c.durationSeconds < 15) reasons.push('under 15 seconds');\n  if (c.escalated) reasons.push('escalated to a person');\n\n  if (reasons.length) {\n    flagged.push({ json: {\n      detected_at: new Date().toISOString(),\n      call_id: c.id,\n      reasons: reasons.join('; '),\n      duration_seconds: Math.round(c.durationSeconds),\n      recording_url: c.recordingUrl,\n    } });\n  }\n}\n\n// No output when nothing is wrong \u2014 an empty run is the good outcome.\nreturn flagged;"
       }
     },
     {
@@ -81,7 +60,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        660,
+        880,
         0
       ],
       "parameters": {
@@ -152,12 +131,39 @@
       }
     },
     {
+      "id": "shape-email",
+      "name": "Shape the email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Aggregate every flagged call (Save flags ran once per row) into one email.\n// Zero items in means a clean hour — WF-22 already returns nothing for that; don't email either.\nconst items = $input.all().map(i => i.json);\nif (!items.length) return [];\nconst lines = items.map(c => `- ${c.call_id}: ${c.reasons} (${c.duration_seconds}s) ${c.recording_url}`);\nreturn [{ json: {\n  subject: `PalmLeaf call quality alert — ${items.length} call(s) flagged`,\n  body: lines.join('\\n'),\n} }];"
+      }
+    },
+    {
+      "id": "email",
+      "name": "Email via WF-26",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "workflowId": "__WF__:wf-26",
+        "options": {}
+      }
+    },
+    {
       "id": "pg",
       "name": "Archive to Postgres",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        880,
+        1540,
         0
       ],
       "disabled": true,
@@ -241,18 +247,29 @@
     }
   ],
   "connections": {
-    "Hourly": {
+    "Called by WF-25": {
       "main": [
         [
           {
-            "node": "Fetch recent calls",
+            "node": "Shape the request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Fetch recent calls": {
+    "Shape the request": {
+      "main": [
+        [
+          {
+            "node": "Fetch via WF-24",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch via WF-24": {
       "main": [
         [
           {
@@ -278,7 +295,23 @@
       "main": [
         [
           {
+            "node": "Shape the email",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Archive to Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape the email": {
+      "main": [
+        [
+          {
+            "node": "Email via WF-26",
             "type": "main",
             "index": 0
           }
@@ -287,7 +320,6 @@
     }
   },
   "settings": {
-    "errorWorkflow": "__WF__:wf-00",
-    "timezone": "America/Chicago"
+    "errorWorkflow": "__WF__:wf-00"
   }
 }

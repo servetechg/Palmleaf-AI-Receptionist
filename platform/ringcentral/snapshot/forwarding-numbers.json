@@ -1,0 +1,33 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3041612036/forwarding-number?page=1&perPage=100",
+  "records": [
+    {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3041612036/forwarding-number/31737725036",
+      "id": "31737725036",
+      "phoneNumber": "+17734192727",
+      "label": "Forward number",
+      "features": [
+        "CallForwarding",
+        "CallFlip"
+      ],
+      "flipNumber": "1",
+      "type": "Other"
+    }
+  ],
+  "paging": {
+    "page": 1,
+    "totalPages": 1,
+    "perPage": 100,
+    "totalElements": 1,
+    "pageStart": 0,
+    "pageEnd": 0
+  },
+  "navigation": {
+    "firstPage": {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3041612036/forwarding-number?page=1&perPage=100"
+    },
+    "lastPage": {
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/extension/3041612036/forwarding-number?page=1&perPage=100"
+    }
+  }
+}

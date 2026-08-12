@@ -1,6 +1,6 @@
 """Canned tool responses for local development.
 
-Each returns a SPOKEN SENTENCE — the same contract Core API will honour (doc 04 §5.1):
+Each returns a SPOKEN SENTENCE — the same contract Core API will honour (reference/core-api §5.1):
 numbers in spoken form, at most three options, machine data only as an echo-able token.
 
 The clock is frozen via GRACE_MOCK_NOW so dates are reproducible, which is what makes
@@ -32,21 +32,25 @@ class Service(NamedTuple):
 
 
 SERVICES = (
-    Service("massage_60", "60-minute massage", 13500, 11500),
-    Service("massage_90", "90-minute massage", 18500, 16000),
+    Service("massage_60", "60-minute massage", 13500, 9000),
+    Service("massage_90", "90-minute massage", 18500, 13500),
     Service("deep_tissue_60", "60-minute deep tissue", 15000, 13000),
 )
 
-PROVIDERS = ("Maria", "James")
+#: No real names from the client yet — the mock offers times only, like the live path.
+PROVIDERS = ("our therapist", "our therapist")
 
+#: Kept byte-identical to platform/knowledge/palmleaf.yaml. If the mock and the database
+#: tell different stories, voice testing is testing the wrong thing.
 BUSINESS_INFO = {
-    "hours": "We are open Monday through Saturday, nine in the morning until seven in the evening, and closed Sundays.",
-    "location": "We are on Dundee Road in Buffalo Grove, just past the Town Center, with parking right out front.",
-    "parking": "There is free parking directly in front of the building.",
-    "contact": "The best way is right here on this line, or by text to the same number.",
-    "services_overview": "We offer therapeutic massage, deep tissue, acupuncture, and cryotherapy.",
-    "policies": "Changes and cancellations are free up to forty-eight hours before your appointment.",
-    "memberships": "Members get a reduced rate on every service and priority booking.",
+    "hours": "We're open every day, eight in the morning to eight thirty at night — seven days a week, holidays included.",
+    "location": "We're at four hundred West Dundee Road, Unit eight, in Buffalo Grove — right across from Old National Bank, near Kingswood United Methodist Church.",
+    "parking": "There's free parking right outside.",
+    "contact": "The easiest way is right here on this line. You can also find us on our website any time.",
+    "services_overview": "We do therapeutic massage, acupuncture, chiropractic, cryo body sculpting, and skin health services. What were you thinking of?",
+    "policies": "We ask for forty-eight hours' notice to cancel or reschedule. There's a room reservation deposit that goes toward your session — if you cancel inside forty-eight hours or don't make it in, that deposit becomes the cancellation fee.",
+    "memberships": "Members pay ninety dollars for a sixty minute session and one thirty-five for ninety minutes, with a one-time forty-nine dollar enrollment.",
+    "team": "All of our providers are seasoned, each with their own style, and everyone's trained for chronic issues and destressing.",
 }
 
 _ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
@@ -115,6 +119,11 @@ def check_availability(a: dict[str, Any], call_id: str) -> str:
     return f"{prefix}{speak_list(phrases)} on {speak_date(date)}. Which works?"
 
 
+def _booked_for(a: dict[str, Any]) -> str:
+    """Booking for a partner is ordinary; confirm with the guest's name, not the caller's."""
+    return str(a.get("bookedForName") or a.get("firstName") or "").strip()
+
+
 def create_booking(a: dict[str, Any], call_id: str) -> str:
     # Server-side medical gate: the prompt is not the only thing enforcing this (I4).
     if not a.get("medicalScreenPassed"):
@@ -123,7 +132,7 @@ def create_booking(a: dict[str, Any], call_id: str) -> str:
     starts = now() + timedelta(days=1)
     _bookings[ref.lower()] = {"ref": ref, "starts": starts}
     return (
-        f"You're all set, {a['firstName']} — {speak_date(starts)} at {speak_time(starts)} "
+        f"You're all set, {_booked_for(a)} — {speak_date(starts)} at {speak_time(starts)} "
         f"with Maria. I'll text you a confirmation."
     )
 

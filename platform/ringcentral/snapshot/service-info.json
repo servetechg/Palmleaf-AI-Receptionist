@@ -1,0 +1,275 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/service-info",
+  "servicePlanName": "RingCentral RingEX Core™",
+  "brand": {
+    "id": "1210",
+    "name": "RingCentral",
+    "homeCountry": {
+      "id": "1",
+      "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/country/1",
+      "name": "United States",
+      "isoCode": "US",
+      "callingCode": "1"
+    }
+  },
+  "servicePlan": {
+    "id": "4999",
+    "name": "RingEX Core™",
+    "edition": "Core"
+  },
+  "billingPlan": {
+    "id": "999",
+    "name": "Active [NBS]",
+    "durationUnit": "Month",
+    "duration": 0,
+    "type": "Regular",
+    "includedPhoneLines": 0
+  },
+  "serviceFeatures": [
+    {
+      "featureName": "SMS",
+      "enabled": true
+    },
+    {
+      "featureName": "SMSReceiving",
+      "enabled": true
+    },
+    {
+      "featureName": "Pager",
+      "enabled": true
+    },
+    {
+      "featureName": "PagerReceiving",
+      "enabled": true
+    },
+    {
+      "featureName": "Voicemail",
+      "enabled": true
+    },
+    {
+      "featureName": "Fax",
+      "enabled": true
+    },
+    {
+      "featureName": "FaxReceiving",
+      "enabled": true
+    },
+    {
+      "featureName": "DND",
+      "enabled": true
+    },
+    {
+      "featureName": "RingOut",
+      "enabled": true
+    },
+    {
+      "featureName": "InternationalCalling",
+      "enabled": false
+    },
+    {
+      "featureName": "Presence",
+      "enabled": true
+    },
+    {
+      "featureName": "VideoConferencing",
+      "enabled": true
+    },
+    {
+      "featureName": "SalesForce",
+      "enabled": false
+    },
+    {
+      "featureName": "Intercom",
+      "enabled": true
+    },
+    {
+      "featureName": "Paging",
+      "enabled": true
+    },
+    {
+      "featureName": "Conferencing",
+      "enabled": true
+    },
+    {
+      "featureName": "VoipCalling",
+      "enabled": true
+    },
+    {
+      "featureName": "FreeSoftPhoneLines",
+      "enabled": true
+    },
+    {
+      "featureName": "HipaaCompliance",
+      "enabled": false
+    },
+    {
+      "featureName": "CallPark",
+      "enabled": true
+    },
+    {
+      "featureName": "SharedLines",
+      "enabled": true
+    },
+    {
+      "featureName": "OnDemandCallRecording",
+      "enabled": true
+    },
+    {
+      "featureName": "Reports",
+      "enabled": true
+    },
+    {
+      "featureName": "CallForwarding",
+      "enabled": true
+    },
+    {
+      "featureName": "DeveloperPortal",
+      "enabled": true
+    },
+    {
+      "featureName": "EncryptionAtRest",
+      "enabled": false
+    },
+    {
+      "featureName": "BlockedMessageForwarding",
+      "enabled": false
+    },
+    {
+      "featureName": "EmergencyCalling",
+      "enabled": false
+    },
+    {
+      "featureName": "HDVoice",
+      "enabled": true
+    },
+    {
+      "featureName": "SingleExtensionUI",
+      "enabled": false
+    },
+    {
+      "featureName": "CallSupervision",
+      "enabled": false
+    },
+    {
+      "featureName": "VoicemailToText",
+      "enabled": true
+    },
+    {
+      "featureName": "WebPhone",
+      "enabled": true
+    },
+    {
+      "featureName": "RCTeams",
+      "enabled": true
+    },
+    {
+      "featureName": "UserManagement",
+      "enabled": true
+    },
+    {
+      "featureName": "Calendar",
+      "enabled": true
+    },
+    {
+      "featureName": "CallerIdControl",
+      "enabled": false
+    },
+    {
+      "featureName": "AutomaticInboundCallRecording",
+      "enabled": false
+    },
+    {
+      "featureName": "AutomaticOutboundCallRecording",
+      "enabled": false
+    },
+    {
+      "featureName": "AutomaticCallRecordingMute",
+      "enabled": true
+    },
+    {
+      "featureName": "SoftPhoneUpdate",
+      "enabled": true
+    },
+    {
+      "featureName": "LinkedSoftphoneLines",
+      "enabled": false
+    },
+    {
+      "featureName": "CallQualitySurvey",
+      "enabled": false
+    },
+    {
+      "featureName": "AccountFederation",
+      "enabled": false
+    },
+    {
+      "featureName": "MMS",
+      "enabled": true
+    },
+    {
+      "featureName": "CallParkLocations",
+      "enabled": true
+    },
+    {
+      "featureName": "ExternalDirectoryIntegration",
+      "enabled": false
+    },
+    {
+      "featureName": "CallSwitch",
+      "enabled": true
+    },
+    {
+      "featureName": "PromoMessage",
+      "enabled": true
+    },
+    {
+      "featureName": "SiteCodes",
+      "enabled": false
+    },
+    {
+      "featureName": "InternationalSMS",
+      "enabled": false
+    },
+    {
+      "featureName": "ConferencingNumber",
+      "enabled": true
+    },
+    {
+      "featureName": "VoipCallingOnMobile",
+      "enabled": true
+    },
+    {
+      "featureName": "DynamicConference",
+      "enabled": false
+    },
+    {
+      "featureName": "ConfigureDelegates",
+      "enabled": false
+    },
+    {
+      "featureName": "Archiver",
+      "enabled": false
+    },
+    {
+      "featureName": "EmergencyAddressAutoUpdate",
+      "enabled": true
+    },
+    {
+      "featureName": "MobileVoipEmergencyCalling",
+      "enabled": false
+    }
+  ],
+  "limits": {
+    "freeSoftPhoneLinesPerExtension": 1,
+    "meetingSize": 100,
+    "maxMonitoredExtensionsPerUser": 100,
+    "maxExtensionNumberLength": 5,
+    "cloudRecordingStorage": 0
+  },
+  "contractedCountry": {
+    "uri": "https://platform.ringcentral.com/restapi/v1.0/dictionary/country/1",
+    "id": "1",
+    "name": "United States",
+    "isoCode": "US"
+  }
+}

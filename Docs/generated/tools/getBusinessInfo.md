@@ -10,13 +10,13 @@
 
 ## What it does, and when Grace calls it
 
-Answer a factual question about the business — hours, address, parking, how to reach us, what we offer, policies, or memberships. Call this instead of answering from memory; you do not know these facts. If the tool says it has no approved answer, do not improvise — escalate.
+Answer any factual question about the business — hours, address, parking, contact, what we offer, policies, memberships, or our team. Call it even when you think you remember the answer; you don't. If it returns no approved answer, say the front desk will confirm and offer a callback or transfer — never improvise.
 
 ## Parameters
 
 | Parameter | Type / allowed values | Required | Default | What it means |
 |---|---|---|---|---|
-| `topic` | `hours` · `location` · `parking` · `contact` · `services_overview` · `policies` · `memberships` | **yes** | — | What the caller asked about. Pick the closest match. If nothing fits, do NOT call this — escalate instead. |
+| `topic` | `hours` · `location` · `parking` · `contact` · `services_overview` · `policies` · `memberships` · `team` | **yes** | — | What the caller asked about. Pick the closest match. If nothing fits, do NOT call this — escalate instead. |
 
 Any parameter not listed above is **rejected**, not ignored — the model inventing a field must be a loud error, never silent.
 

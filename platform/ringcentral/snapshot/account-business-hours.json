@@ -1,0 +1,49 @@
+{
+  "uri": "https://platform.ringcentral.com/restapi/v1.0/account/3041612036/business-hours",
+  "schedule": {
+    "weeklyRanges": {
+      "monday": [
+        {
+          "from": "08:00",
+          "to": "20:30"
+        }
+      ],
+      "tuesday": [
+        {
+          "from": "08:00",
+          "to": "20:30"
+        }
+      ],
+      "wednesday": [
+        {
+          "from": "08:00",
+          "to": "20:30"
+        }
+      ],
+      "thursday": [
+        {
+          "from": "08:00",
+          "to": "20:30"
+        }
+      ],
+      "friday": [
+        {
+          "from": "08:00",
+          "to": "20:30"
+        }
+      ],
+      "saturday": [
+        {
+          "from": "08:00",
+          "to": "20:30"
+        }
+      ],
+      "sunday": [
+        {
+          "from": "08:00",
+          "to": "20:30"
+        }
+      ]
+    }
+  }
+}
